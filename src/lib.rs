@@ -125,18 +125,3 @@ impl Default for Config {
         }
     }
 }
-
-type ValidationResult = Result<(), Box<dyn Error>>;
-
-impl Config {
-    /// Check integrity. However, it doesn't check whether [Config::file_path] points at a real
-    /// file. And it doesn't check that [Config::invoker_directory] is `Some(...)`.
-    pub fn validate_ready_except_invoker_directory(&self) -> ValidationResult {
-        Ok(())
-    }
-    /// Like validate_ready_except_invoker_directory, plus check that [Config::invoker_directory] is
-    /// `Some(...)`.
-    pub fn validate_ready(&self) -> ValidationResult {
-        Ok(())
-    }
-}
