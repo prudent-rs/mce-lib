@@ -1,6 +1,5 @@
 #![doc = include_str!("../README.md")]
 
-use core::error::Error;
 use serde::{Deserialize, Serialize};
 
 // Variations and params
@@ -11,22 +10,22 @@ use serde::{Deserialize, Serialize};
 pub mod config {
     use serde::{Deserialize, Serialize};
 
-    ///
+    /// Whether we the very first code block is a preamble that needs special handling.
     #[derive(Serialize, Deserialize, Clone, Debug)]
     pub enum Preamble {
         /// No preamble - the very first code block is a non-Preamble block (handled by injecting
         /// any header and/or body strings if set in [crate::Config]).
         NoPreamble,
         /// Expecting a preamble, but no special handling - pass as-is. Any [Headers] and/or
-        /// [crate::Config::item_body_suffix] will NOT be injected.
+        /// [crate::Config::ordinary_code_suffix] will NOT be applied (prefixed/inserted).
         CopyVerbatim,
-        /// Expecting the very first code block to contain `item`s only (as per
+        /// Expecting the very first code block to contain `item`s ONLY (as per
         /// [`item`](https://lukaswirth.dev/tlborm/decl-macros/minutiae/fragment-specifiers.html#item)
         /// captured by declarative macros (ones defined with `macro_rules!`)). For example,
         /// `struct` definitions, `use` or `pub use` imports.
         ///
-        /// The [String] value is a prefix injected before each item (in the same preamble, that is,
-        /// the first code block). Example of a potentially useful prefix:
+        /// The [String] value is a prefix injected before each item (located in the same preamble,
+        /// that is, the very first code block). Example of a potentially useful prefix:
         /// - `#[allow(unused_imports)]`, or
         /// - `# #[allow(unused_imports)]` where the leading `#` makes that line
         ///   [hidden](https://doc.rust-lang.org/rustdoc/write-documentation/documentation-tests.html#hiding-portions-of-the-example)
@@ -47,15 +46,15 @@ pub mod config {
         pub struct Inserts {
             /// A list of strings to be injected after the injected
             /// [crate::config::Headers::prefix_before_insert], and before the beginning of the
-            /// existing code of any non-preamble code block. Each string from this list is to be
-            /// used exactly once, one per non-preamble code block. The number of strings in this
-            /// list has to be the same as the number of non-preamble code blocks.
+            /// existing code of each non-preamble code block. Each string from this list is to be
+            /// used exactly once, one per each non-preamble code block. The number of strings in
+            /// this list has to be the same as the number of non-preamble code blocks.
             ///
-            /// Example of useful inserts: Names of test functions to generate, one per each
-            /// non-preamble code block.
+            /// Example of useful inserts: Names of test functions (or parts of such names) to
+            /// generate, one per each non-preamble code block.
             pub inserts: Vec<String>,
 
-            /// Content to be injected at the beginning of any non-preamble code block, but AFTER an
+            /// Content to be injected at the beginning of each non-preamble code block, but AFTER an
             /// insert.
             ///
             /// Example of useful inserts for generating test functions: `() {`.
@@ -99,29 +98,25 @@ pub struct Config {
     // macros). Defaults to "README.md".
     pub file_path: String,
 
-    /// NOT a part of public API. Set by crate `readme-code-extractor`.
-    pub invoker_file_path: Option<String>,
-
     pub preamble: config::Preamble,
 
-    pub headers: Option<config::Headers>,
+    pub ordinary_code_headers: Option<config::Headers>,
 
     /// Suffix to be appended at the end of any non-preamble code block.
     ///
     /// Example of useful inserts for generating test functions: `}`.
-    pub item_body_suffix: String,
+    pub ordinary_code_suffix: String,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Config {
             file_path: "README.md".to_owned(),
-            invoker_file_path: None,
 
             preamble: config::Preamble::NoPreamble,
 
-            headers: None,
-            item_body_suffix: "".to_owned(),
+            ordinary_code_headers: None,
+            ordinary_code_suffix: "".to_owned(),
         }
     }
 }
