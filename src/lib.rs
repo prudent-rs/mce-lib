@@ -1,5 +1,8 @@
 #![doc = include_str!("../README.md")]
+#![no_std]
+extern crate alloc;
 
+use alloc::{borrow::ToOwned, string::String};
 use serde::{Deserialize, Serialize};
 
 // Variations and params
@@ -8,6 +11,7 @@ use serde::{Deserialize, Serialize};
 // - list of idents (or their parts) to use with each non-preamble item
 
 pub mod config {
+    use alloc::{borrow::ToOwned, string::String};
     use serde::{Deserialize, Serialize};
 
     /// Whether we the very first code block is a preamble that needs special handling.
@@ -39,6 +43,7 @@ pub mod config {
     }
 
     pub mod headers {
+        use alloc::{borrow::ToOwned, string::String, vec, vec::Vec};
         use serde::{Deserialize, Serialize};
 
         #[derive(Serialize, Deserialize, Clone, Debug)]
