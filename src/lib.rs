@@ -1,5 +1,8 @@
 #![doc = include_str!("../README.md")]
 #![no_std]
+
+use alloc::boxed::Box;
+use toml::de::Error as TomlError;
 extern crate alloc;
 
 // On VS Code
@@ -33,13 +36,12 @@ pub mod misc {
         fn _seal(&self, _: &SealedTraitParam);
     }
 
-    /* //@TODO
     /// Intentionally NOT public.
-    #[allow(dead_code)]
-    struct SealedTraitImpl {}
+    //#[allow(dead_code)]
+    pub(crate) struct SealedTraitImpl {}
     impl SealedTrait for SealedTraitImpl {
-        fn _seal(_: &SealedTraitParam) {}
-    }*/
+        fn _seal(&self, _: &SealedTraitParam) {}
+    }
 }
 
 const _: &str = /*toml*/
@@ -316,6 +318,11 @@ mod trait_impls {
             &self.ordinary_code_suffix
         }
     }
+}
+
+pub fn from_toml(input: &str) -> Result<Box<dyn traits::Config>, TomlError> {
+    let cfg: types::Config<misc::SealedTraitImpl> = toml::from_str(input)?;
+    Ok(Box::new(cfg))
 }
 
 /// Internal, used between crates `readme-code-extractor-core` and `readme-code-extractor` to
