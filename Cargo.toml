@@ -3,6 +3,7 @@ name = "readme-code-extractor-core"
 version = "0.1.0"
 
 edition = "2018"
+# @TODFO 1.85.0 if we use https://crates.io/crates/toml/1.1.2+spec-1.1.0
 rust-version = "1.81.0"
 
 license = "BSD-2-Clause OR Apache-2.0 OR MIT"

@@ -2,6 +2,112 @@
 #![no_std]
 extern crate alloc;
 
+// On VS Code
+// - install https://github.com/ruschaaf/extended-embedded-languages
+// - and prefix the raw string with `/*toml*/ ` - see https://github.com/ruschaaf/extended-embedded-languages#embedded-languages
+#[doc = r"123\n\n1"]
+#[doc = r"123\n\n1( { []} )"]
+#[doc = /*toml*/ r#"
+    a = "b"
+    [xx]
+    y = 1
+    [dd.xx]
+    [[x]]
+    h = 1.0
+    q = { y = 1. b = 2}
+    serde = { version = "1.0.113", features = ["derive"] }
+"#]
+#[doc = /*toml*/ r#"
+a = "b"
+[xx]
+y = 1
+[dd.xx]
+h = 1.0
+q = { y = 1. b = 2}
+"#]
+pub mod misc {
+    /// Intentionally NOT public.
+    pub(crate) struct SealedTraitParam {}
+    pub trait SealedTrait {
+        #[allow(private_interfaces)]
+        fn _seal(&self, _: &SealedTraitParam);
+    }
+
+    /* //@TODO
+    /// Intentionally NOT public.
+    #[allow(dead_code)]
+    struct SealedTraitImpl {}
+    impl SealedTrait for SealedTraitImpl {
+        fn _seal(_: &SealedTraitParam) {}
+    }*/
+}
+
+const _: &str = /*toml*/
+    r#"
+a = "b"
+[xx]
+y = 1
+[dd.xx]
+h = 1.0
+q = { y = 1. b = 2}
+"#;
+
+const _S1: &str = /*json*/
+    r#"
+    {"a": "b", "c": [1, 2, 3]}
+"#;
+
+fn _f() -> &'static str {
+    /*json*/
+    r#"
+    {"a": "b", "c": [1, 2, 3]}
+    "#
+}
+
+pub mod traits {
+    //use alloc::string::String;
+    //use alloc::{borrow::ToOwned, string::String};
+    //use serde::{Deserialize, Serialize};
+
+    pub mod config {
+        //use alloc::string::String;
+
+        pub trait Preamble: crate::misc::SealedTrait {
+            fn is_no_preamble(&self) -> bool;
+            fn is_copy_verbatim(&self) -> bool;
+            // @TODO Should this be ToOwned<&str>?
+            fn is_items_with_prefix(&self) -> Option<&str>;
+        }
+
+        pub mod headers {
+            use alloc::string::String;
+
+            pub trait Inserts: crate::misc::SealedTrait {
+                // NOT returning an [Iterator], because [Iterator] would need to be `Box`-ed. We can
+                // NOT returrm `impl Iterator<Item = &'a str>``, because then this trait would NOT
+                // be dyn-compatible.
+                fn inserts<'a>(&'a self) -> &'a [String];
+
+                fn after_insert(&self) -> &str;
+            }
+        }
+
+        pub trait Headers: crate::misc::SealedTrait {
+            fn prefix_before_insert(&self) -> &str;
+            fn inserts(&self) -> Option<&dyn headers::Inserts>;
+        }
+    }
+
+    pub trait Config: crate::misc::SealedTrait {
+        fn file_path(&self) -> &str;
+
+        fn preamble(&self) -> &dyn config::Preamble;
+
+        fn ordinary_code_headers(&self) -> Option<&dyn config::Headers>;
+
+        fn ordinary_code_suffix(&self) -> &str;
+    }
+}
 
 pub mod types {
     use alloc::{borrow::ToOwned, string::String};
@@ -100,11 +206,12 @@ pub mod types {
     #[serde(default)]
     /// To prevent the users on depending on pattern matching completeness etc.
     #[non_exhaustive]
-    pub struct Config<S: SealedTrait> {
+    pub struct Config<S: crate::misc::SealedTrait> {
         _seal: PhantomData<S>,
 
-        // **Relative** path (relative to the directory of Rust source file that invoked the chain of
-        // macros). Defaults to "README.md".
+        // @TODO ToOwned<&str> instead?
+        /// **Relative** path (relative to the directory of Rust source file that invoked the chain
+        /// of macros). Defaults to "README.md".
         pub file_path: String,
 
         pub preamble: config::Preamble,
@@ -117,7 +224,7 @@ pub mod types {
         pub ordinary_code_suffix: String,
     }
 
-    impl<S: SealedTrait> Default for Config<S> {
+    impl<S: crate::misc::SealedTrait> Default for Config<S> {
         fn default() -> Self {
             Config {
                 _seal: PhantomData,
@@ -131,19 +238,83 @@ pub mod types {
             }
         }
     }
+}
 
-    /// Intentionally NOT public.
-    struct SealedTraitParam {}
-    pub trait SealedTrait {
+mod trait_impls {
+    use crate::misc::{SealedTrait, SealedTraitParam};
+    use alloc::string::String;
+
+    impl SealedTrait for crate::types::config::Preamble {
         #[allow(private_interfaces)]
-        fn _seal(_: &SealedTraitParam);
+        fn _seal(&self, _: &SealedTraitParam) {}
+    }
+    impl crate::traits::config::Preamble for crate::types::config::Preamble {
+        fn is_no_preamble(&self) -> bool {
+            matches!(self, Self::NoPreamble)
+        }
+        fn is_copy_verbatim(&self) -> bool {
+            matches!(self, Self::CopyVerbatim)
+        }
+        fn is_items_with_prefix(&self) -> Option<&str> {
+            if let Self::ItemsWithPrefix(s) = self {
+                Some(s)
+            } else {
+                None
+            }
+        }
     }
 
-    /// Intentionally NOT public.
-    #[allow(dead_code)]
-    struct SealedTraitImpl {}
-    impl SealedTrait for SealedTraitImpl {
-        fn _seal(_: &SealedTraitParam) {}
+    impl SealedTrait for crate::types::config::headers::Inserts {
+        #[allow(private_interfaces)]
+        fn _seal(&self, _: &SealedTraitParam) {}
+    }
+    impl crate::traits::config::headers::Inserts for crate::types::config::headers::Inserts {
+        fn inserts<'a>(&'a self) -> &'a [String] {
+            &self.inserts
+        }
+        fn after_insert(&self) -> &str {
+            &self.after_insert
+        }
+    }
+
+    impl SealedTrait for crate::types::config::Headers {
+        #[allow(private_interfaces)]
+        fn _seal(&self, _: &SealedTraitParam) {}
+    }
+    impl crate::traits::config::Headers for crate::types::config::Headers {
+        fn prefix_before_insert(&self) -> &str {
+            &self.prefix_before_insert
+        }
+        fn inserts(&self) -> Option<&dyn crate::traits::config::headers::Inserts> {
+            if let Some(inserts) = &self.inserts {
+                Some(inserts)
+            } else {
+                None
+            }
+        }
+    }
+
+    impl<S: SealedTrait> SealedTrait for crate::types::Config<S> {
+        #[allow(private_interfaces)]
+        fn _seal(&self, _: &SealedTraitParam) {}
+    }
+    impl<S: SealedTrait> crate::traits::Config for crate::types::Config<S> {
+        fn file_path(&self) -> &str {
+            &self.file_path
+        }
+        fn preamble(&self) -> &dyn crate::traits::config::Preamble {
+            &self.preamble
+        }
+        fn ordinary_code_headers(&self) -> Option<&dyn crate::traits::config::Headers> {
+            if let Some(headers) = &self.ordinary_code_headers {
+                Some(headers)
+            } else {
+                None
+            }
+        }
+        fn ordinary_code_suffix(&self) -> &str {
+            &self.ordinary_code_suffix
+        }
     }
 }
 
