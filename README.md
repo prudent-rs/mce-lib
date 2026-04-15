@@ -40,5 +40,5 @@ We use only TOML deserialization with [`toml-rs/toml`](https://github.com/toml-r
     -> `fn value_from_str()`
 - syntax highlighted by ["Extended **Embedded**
   Languages"](https://marketplace.visualstudio.com/items?itemName=ruschaaf.extended-embedded-languages)
-  in VS Code, and that works for in raw strings passed to `#![doc = r#"..."#]` or `#[doc =
+  in VS Code. That also works **in raw strings** passed to `#![doc = r#"..."#]` or `#[doc =
   r#"..."#]` (and other attributes).
