@@ -36,6 +36,9 @@ mod string_literal_content {
     /// backslash occurrences are at line ends of multiline literals, but then the new line must be
     /// as on Unix/Mac OS: only the new line character `\n`, and NOT the Windows/DOS pair of
     /// carriage return `\r` and new line `\n`.`
+    ///
+    /// PANIC on incorrect input - but that should be only due to an internal error in rustc or
+    /// proc_macro2.
     pub fn string_literal_content(literal: &Literal) -> impl AsRef<str> {
         // Initially it's enclosed by "...", r"...", r#"..."# etc.
         let enclosed = literal.to_string();
