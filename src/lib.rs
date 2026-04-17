@@ -28,17 +28,12 @@ mod string_literal_content {
         }
     }
 
-    /// Return string content stored in literal. Literal can be
+    /// Return string content stored in a given literal. The literal can be
     /// - within quotes "...", or
-    /// - a raw string literal `r"...", r#"..."#, r##"..."` (and so on).
+    /// - a raw string literal `r"...", r#"..."#, r##"..."` (and so on). Do NOT escape - the
+    ///   backslash character '\' in a raw string literal does no escaping.
     ///
-    /// If it's within quotes "...", it must NOT contain any escaping (backslash). The only allowed
-    /// backslash occurrences are at line ends of multiline literals, but then the new line must be
-    /// as on Unix/Mac OS: only the new line character `\n`, and NOT the Windows/DOS pair of
-    /// carriage return `\r` and new line `\n`.`
-    ///
-    /// PANIC on incorrect input - but that should be only due to an internal error in rustc or
-    /// proc_macro2.
+    /// PANIC is UNLIKELY - it should be only due to an internal error in rustc and/or proc_macro2.
     pub fn string_literal_content(literal: &Literal) -> impl AsRef<str> {
         // Initially it's enclosed by "...", r"...", r#"..."# etc.
         let enclosed = literal.to_string();
@@ -68,26 +63,6 @@ mod string_literal_content {
                     last, '"',
                     "Expecting the last character to be a closing quote '\"', but it's: '{last}'."
                 );
-                while let Some(c) = chars.next() {
-                    if c == '\\' {
-                        if let Some(c) = chars.next() {
-                            if c == '\n' {
-                                continue;
-                            }
-                        }
-                        panic!(
-                            "When passing in an ordinary enclosed string literal \"...\", do not \
-                             use any escaping (backslash character `\\`). \
-                             \
-                             The only exception is escaping a new line character \
-                             '\\n' like on Unix/Mac OS - BUT do NOT use the Windows/DOS pair of \
-                             carriage return `\r` and new line `\n`.\
-                             \
-                             To pass in special characters, use an (unescaped) raw string literal \
-                             like r\"...\", r#\"...\"#..., r##\"...\"## (and so on)."
-                        )
-                    }
-                }
                 (1, enclosed.len() - 2)
             } else {
                 // raw string literals
