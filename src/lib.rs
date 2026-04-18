@@ -1,7 +1,7 @@
 #![doc = include_str!("../README.md")]
 
 extern crate alloc;
-use alloc::string::{String, ToString};
+use alloc::string::String;
 //use core::str::FromStr;
 use proc_macro2::Literal;
 
@@ -144,63 +144,30 @@ pub use string_literal_content::string_literal_content;
 /// UTF-8).
 /// Return content of the config (toml) file.
 pub fn load_config_toml_file(config_toml_file_relative_path: &Literal) -> String {
-    let config_toml_file_path_enclosed = config_toml_file_relative_path.to_string();
+    let span = config_toml_file_relative_path.span();
 
-    {
-        // assertions
-        let config_toml_file_path_enclosed_bytes = config_toml_file_path_enclosed.as_bytes();
-        assert!(
-            config_toml_file_path_enclosed_bytes[0] == b'"',
-            "Expecting file path {config_toml_file_path_enclosed} to start with a quote \"."
-        );
-
-        assert!(
-            config_toml_file_path_enclosed_bytes[config_toml_file_path_enclosed_bytes.len() - 1]
-                == b'"',
-            "Expecting file path {config_toml_file_path_enclosed} to end with a quote \"."
-        );
-    }
-
-    let config_toml_file_path =
-        &config_toml_file_path_enclosed[1..config_toml_file_path_enclosed.len() - 1];
-
-    // Validate that the file path is compliant, by reversing the process, and then
-    // comparing the original and the result `String`. We use
-    // `proc_macro2::string(...).to_string()`.
-
-    {
-        //assertions
-        let regenerated_file_path_literal = Literal::string(config_toml_file_path);
-        let regenerated_file_path_enclosed = regenerated_file_path_literal.to_string();
-        assert_eq!(
-            config_toml_file_path_enclosed, regenerated_file_path_enclosed,
-            "Can't parse/handle the given config (toml) file path literal (string) {}. It was \
-             handled as {}.",
-            config_toml_file_path_enclosed, regenerated_file_path_enclosed
-        );
-    }
+    let config_toml_file_relative_path = string_literal_content(config_toml_file_relative_path);
+    let config_toml_file_relative_path = config_toml_file_relative_path.as_ref();
 
     let cfg_file_path = {
-        let invoker_file_path = config_toml_file_relative_path
-            .span()
-            .local_file()
-            .unwrap_or_else(|| {
-                // #TODO remove "all_by_file" from the erro message
-                panic!(
-                    "Rust source file that invoked readme_code_extractor::all_by_file! \
+        let invoker_file_path = span.local_file().unwrap_or_else(|| {
+            panic!(
+                "Rust source file that invoked \
+                     readme_code_extractor_lib::load_config_toml_file \
+                     (through readme_code_extractor::all_by_file! or similar) \
                      macro for config (toml) file with relative path \
                      {config_toml_file_relative_path} should have a known location."
-                )
-            });
+            )
+        });
         let invoker_parent_dir = invoker_file_path.parent().unwrap_or_else(|| {
-            // #TODO remove "all_by_file" from the erro message
             panic!(
-                "Rust source file that invoked readme_code_extractor::all_by_file! \
+                "Rust source file that invoked readme_code_extractor_lib::load_config_toml_file \
+                 (through readme_code_extractor::all_by_file! or similar) \
                  macro for config (toml) file with relative path {config_toml_file_relative_path} \
                  may exist, but we can't get its parent directory.",
             )
         });
-        invoker_parent_dir.join(config_toml_file_path)
+        invoker_parent_dir.join(config_toml_file_relative_path)
     };
 
     // Error handling is modelling https://doc.rust-lang.org/nightly/src/core/result.rs.html
