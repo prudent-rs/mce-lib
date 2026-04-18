@@ -293,27 +293,37 @@ pub mod public {
         fn ordinary_code_suffix(&self) -> &str;
     }
 
-    pub trait Loaded {
+    pub trait Loaded: crate::misc::SealedTrait {
         fn source_file_content(&self) -> &str;
         fn config(&self) -> &dyn Config;
         fn span(&self) -> &Span;
     }
 
-    pub trait Extracted {
+    pub trait CodeBlock: crate::misc::SealedTrait {
+        fn triple_backtick_suffix(&self) -> &str;
+        fn code(&self) -> &str;
+    }
+
+    pub trait ReadmeBlock: crate::misc::SealedTrait {
+        fn is_text(&self) -> Option<&str>;
+        fn is_code(&self) -> Option<&dyn CodeBlock>;
+    }
+
+    pub trait Extracted: crate::misc::SealedTrait {
         /// Content of the first source block, but only if we do expect a preamble, that is,
         /// if [crate::public::config::Preamble::is_no_preamble] returns `false`.
         fn preamble(&self) -> Option<&str>;
-        fn code_blocks(&self) -> &[&str];
+        fn readme_blocks(&self) -> &[&str];
     }
 }
 
 // @TODO conditional compilation - for docs.rs only. See prudent
 //
-//pub use private as types;
+//pub use private as private_documented;
 
 /// Internal/Only for prudent-rs/readme-code-extractor. SemVer-exempt!
 ///
-/// Public only when on docs.rs, so they get documented. Feature that enables them to be public
+/// Public only when on docs.rs, so that they get documented. Feature that enables them to be public
 /// fails with a compile error if used outside of docs.rs.
 pub mod private {
     use alloc::string::String;
@@ -413,17 +423,29 @@ pub mod private {
         pub(crate) ordinary_code_suffix: String,
     }
 
+    #[derive(Debug)]
     pub struct Loaded {
         pub(crate) source_file_content: String,
         pub(crate) config: Config,
         pub(crate) span: Span,
     }
 
-    //pub struct 
+    #[derive(Debug)]
+    pub struct CodeBlock<'a> {
+        pub(crate) triple_backtick_suffix: &'a str,
+        pub(crate) code: &'a str,
+    }
 
+    #[derive(Debug)]
+    pub enum ReadmeBlock<'a> {
+        Text(&'a str),
+        Code(CodeBlock<'a>),
+    }
+
+    #[derive(Debug)]
     pub struct Extracted<'a> {
         pub(crate) preamble: Option<&'a str>,
-        pub(crate) code_blocks: Vec<&'a str>,
+        pub(crate) readme_blocks: Vec<&'a str>,
     }
 }
 
@@ -539,6 +561,10 @@ mod trait_impls {
         }
     }
 
+    impl SealedTrait for crate::private::Loaded {
+        #[allow(private_interfaces)]
+        fn _seal(&self, _: &SealedTraitParam) {}
+    }
     impl crate::public::Loaded for crate::private::Loaded {
         fn source_file_content(&self) -> &str {
             &self.source_file_content
@@ -551,12 +577,48 @@ mod trait_impls {
         }
     }
 
+    impl<'a> SealedTrait for crate::private::CodeBlock<'a> {
+        #[allow(private_interfaces)]
+        fn _seal(&self, _: &SealedTraitParam) {}
+    }
+    impl<'a> crate::public::CodeBlock for crate::private::CodeBlock<'a> {
+        fn triple_backtick_suffix(&self) -> &str {
+            self.triple_backtick_suffix
+        }
+        fn code(&self) -> &str {
+            self.code
+        }
+    }
+
+    impl<'a> SealedTrait for crate::private::ReadmeBlock<'a> {
+        #[allow(private_interfaces)]
+        fn _seal(&self, _: &SealedTraitParam) {}
+    }
+    impl<'a> crate::public::ReadmeBlock for crate::private::ReadmeBlock<'a> {
+        fn is_text(&self) -> Option<&str> {
+            match self {
+                Self::Text(s) => Some(*s),
+                Self::Code(_) => None,
+            }
+        }
+        fn is_code(&self) -> Option<&dyn crate::public::CodeBlock> {
+            match self {
+                Self::Code(b) => Some(b),
+                Self::Text(_) => None,
+            }
+        }
+    }
+
+    impl<'a> SealedTrait for crate::private::Extracted<'a> {
+        #[allow(private_interfaces)]
+        fn _seal(&self, _: &SealedTraitParam) {}
+    }
     impl<'a> crate::public::Extracted for crate::private::Extracted<'a> {
         fn preamble(&self) -> Option<&str> {
             self.preamble
         }
-        fn code_blocks(&self) -> &[&str] {
-            &self.code_blocks
+        fn readme_blocks(&self) -> &[&str] {
+            &self.readme_blocks
         }
     }
 }
@@ -589,7 +651,7 @@ pub fn load(config_content_literal: &Literal) -> impl public::Loaded {
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
-enum ReadmeBlockItemType {
+enum ReadmeBlockType {
     Text,
     Code,
 }
@@ -615,7 +677,7 @@ macro_rules! peek_and_drop {
 fn readme_blocks_iter(source_content: &str) {
     //-> impl Iterator<Item = (&str, ReadmeBlockItemType)> {
     let mut pairs = source_content.char_indices().peekable();
-    let mut item_type = ReadmeBlockItemType::Text;
+    let mut item_type = ReadmeBlockType::Text;
 
     // Exclusive - so it will be the beginning of the next item to return
     let mut last_item_end = 0usize;
@@ -654,7 +716,7 @@ pub fn extract<'a>(load: &'a impl public::Loaded) -> impl public::Extracted {
 
     let mut block_start = 0usize;
 
-    let code_blocks = core::iter::from_fn( move || {
+    let readme_blocks = core::iter::from_fn( move || {
 
     });
 
@@ -666,7 +728,7 @@ pub fn extract<'a>(load: &'a impl public::Loaded) -> impl public::Extracted {
 
     private::Extracted {
         preamble,
-        code_blocks
+        readme_blocks
     }
 }*/
 
