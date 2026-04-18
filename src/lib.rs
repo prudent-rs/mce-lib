@@ -309,13 +309,13 @@ pub mod public {
 
 // @TODO conditional compilation - for docs.rs only. See prudent
 //
-//pub use priv_types as types;
+//pub use private as types;
 
 /// Internal/Only for prudent-rs/readme-code-extractor. SemVer-exempt!
 ///
 /// Public only when on docs.rs, so they get documented. Feature that enables them to be public
 /// fails with a compile error if used outside of docs.rs.
-pub mod priv_types {
+pub mod private {
     use alloc::string::String;
     use proc_macro2::Span;
     use serde::{Deserialize, Serialize};
@@ -432,16 +432,16 @@ mod trait_impls {
     use alloc::string::String;
     use proc_macro2::Span;
 
-    impl SealedTrait for crate::priv_types::config::Preamble {
+    impl SealedTrait for crate::private::config::Preamble {
         #[allow(private_interfaces)]
         fn _seal(&self, _: &SealedTraitParam) {}
     }
-    impl Default for crate::priv_types::config::Preamble {
+    impl Default for crate::private::config::Preamble {
         fn default() -> Self {
             Self::NoPreamble
         }
     }
-    impl crate::public::config::Preamble for crate::priv_types::config::Preamble {
+    impl crate::public::config::Preamble for crate::private::config::Preamble {
         fn is_no_preamble(&self) -> bool {
             matches!(self, Self::NoPreamble)
         }
@@ -457,11 +457,11 @@ mod trait_impls {
         }
     }
 
-    impl SealedTrait for crate::priv_types::config::headers::Inserts {
+    impl SealedTrait for crate::private::config::headers::Inserts {
         #[allow(private_interfaces)]
         fn _seal(&self, _: &SealedTraitParam) {}
     }
-    impl Default for crate::priv_types::config::headers::Inserts {
+    impl Default for crate::private::config::headers::Inserts {
         fn default() -> Self {
             Self {
                 inserts: vec![],
@@ -469,7 +469,7 @@ mod trait_impls {
             }
         }
     }
-    impl crate::public::config::headers::Inserts for crate::priv_types::config::headers::Inserts {
+    impl crate::public::config::headers::Inserts for crate::private::config::headers::Inserts {
         fn inserts<'a>(&'a self) -> &'a [String] {
             &self.inserts
         }
@@ -478,11 +478,11 @@ mod trait_impls {
         }
     }
 
-    impl SealedTrait for crate::priv_types::config::Headers {
+    impl SealedTrait for crate::private::config::Headers {
         #[allow(private_interfaces)]
         fn _seal(&self, _: &SealedTraitParam) {}
     }
-    impl Default for crate::priv_types::config::Headers {
+    impl Default for crate::private::config::Headers {
         fn default() -> Self {
             Self {
                 prefix_before_insert: "".to_owned(),
@@ -491,7 +491,7 @@ mod trait_impls {
         }
     }
 
-    impl crate::public::config::Headers for crate::priv_types::config::Headers {
+    impl crate::public::config::Headers for crate::private::config::Headers {
         fn prefix_before_insert(&self) -> &str {
             &self.prefix_before_insert
         }
@@ -504,23 +504,23 @@ mod trait_impls {
         }
     }
 
-    impl SealedTrait for crate::priv_types::Config {
+    impl SealedTrait for crate::private::Config {
         #[allow(private_interfaces)]
         fn _seal(&self, _: &SealedTraitParam) {}
     }
-    impl Default for crate::priv_types::Config {
+    impl Default for crate::private::Config {
         fn default() -> Self {
             Self {
                 file_path: "README.md".to_owned(),
 
-                preamble: crate::priv_types::config::Preamble::NoPreamble,
+                preamble: crate::private::config::Preamble::NoPreamble,
 
                 ordinary_code_headers: None,
                 ordinary_code_suffix: "".to_owned(),
             }
         }
     }
-    impl crate::public::Config for crate::priv_types::Config {
+    impl crate::public::Config for crate::private::Config {
         fn file_path(&self) -> &str {
             &self.file_path
         }
@@ -539,7 +539,7 @@ mod trait_impls {
         }
     }
 
-    impl crate::public::Loaded for crate::priv_types::Loaded {
+    impl crate::public::Loaded for crate::private::Loaded {
         fn source_file_content(&self) -> &str {
             &self.source_file_content
         }
@@ -551,7 +551,7 @@ mod trait_impls {
         }
     }
 
-    impl<'a> crate::public::Extracted for crate::priv_types::Extracted<'a> {
+    impl<'a> crate::public::Extracted for crate::private::Extracted<'a> {
         fn preamble(&self) -> Option<&str> {
             self.preamble
         }
@@ -561,10 +561,10 @@ mod trait_impls {
     }
 }
 
-fn config_and_span(config_content_literal: &Literal) -> (priv_types::Config, Span) {
+fn config_and_span(config_content_literal: &Literal) -> (private::Config, Span) {
     let config_content = crate::string_literal_content(config_content_literal);
     let config_content = config_content.as_ref();
-    let config = toml::from_str::<priv_types::Config>(config_content);
+    let config = toml::from_str::<private::Config>(config_content);
 
     match config {
         Ok(config) => (config, config_content_literal.span()),
@@ -581,7 +581,7 @@ fn config_and_span(config_content_literal: &Literal) -> (priv_types::Config, Spa
 pub fn load(config_content_literal: &Literal) -> impl public::Loaded {
     let (config, span) = config_and_span(config_content_literal);
 
-    priv_types::Loaded {
+    private::Loaded {
         source_file_content: load_file(config_content_literal),
         config,
         span,
@@ -664,7 +664,7 @@ pub fn extract<'a>(load: &'a impl public::Loaded) -> impl public::Extracted {
         None
     };
 
-    priv_types::Extracted {
+    private::Extracted {
         preamble,
         code_blocks
     }
