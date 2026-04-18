@@ -140,41 +140,41 @@ mod string_literal_content {
 }
 pub use string_literal_content::string_literal_content;
 
-/// Restriction: We support only config (toml) files that are in UTF-8 (the config content is in
-/// UTF-8).
-/// Return content of the config (toml) file.
-pub fn load_config_toml_file(config_toml_file_relative_path: &Literal) -> String {
-    let span = config_toml_file_relative_path.span();
+/// Restriction: We support only files that are in UTF-8 (the content is in UTF-8).
+///
+/// Return content of the file.
+pub fn load_file(file_relative_path: &Literal) -> String {
+    let span = file_relative_path.span();
 
-    let config_toml_file_relative_path = string_literal_content(config_toml_file_relative_path);
-    let config_toml_file_relative_path = config_toml_file_relative_path.as_ref();
+    let file_relative_path = string_literal_content(file_relative_path);
+    let file_relative_path = file_relative_path.as_ref();
 
     let cfg_file_path = {
         let invoker_file_path = span.local_file().unwrap_or_else(|| {
             panic!(
                 "Rust source file that invoked \
-                     readme_code_extractor_lib::load_config_toml_file \
+                     readme_code_extractor_lib::load_file \
                      (through readme_code_extractor::all_by_file! or similar) \
-                     macro for config (toml) file with relative path \
-                     {config_toml_file_relative_path} should have a known location."
+                     macro for file with relative path \
+                     {file_relative_path} should have a known location."
             )
         });
         let invoker_parent_dir = invoker_file_path.parent().unwrap_or_else(|| {
             panic!(
-                "Rust source file that invoked readme_code_extractor_lib::load_config_toml_file \
+                "Rust source file that invoked readme_code_extractor_lib::load_file \
                  (through readme_code_extractor::all_by_file! or similar) \
-                 macro for config (toml) file with relative path {config_toml_file_relative_path} \
+                 macro for file with relative path {file_relative_path} \
                  may exist, but we can't get its parent directory.",
             )
         });
-        invoker_parent_dir.join(config_toml_file_relative_path)
+        invoker_parent_dir.join(file_relative_path)
     };
 
     // Error handling is modelling https://doc.rust-lang.org/nightly/src/core/result.rs.html
     // > `fn unwrap_failed`, which invokes `panic!("{msg}: {error:?}");`
     std::fs::read_to_string(&cfg_file_path).unwrap_or_else(|e| {
         let cfg_file_path = cfg_file_path.to_str().unwrap_or("");
-        panic!("Expecting a config (toml) file {cfg_file_path}, but opening it failed: {e:?}",)
+        panic!("Expecting a file {cfg_file_path}, but opening it failed: {e:?}",)
     })
 }
 
