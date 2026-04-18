@@ -2,7 +2,7 @@
 
 extern crate alloc;
 use alloc::string::String;
-//use core::str::FromStr;
+use core::str::CharIndices;
 use proc_macro2::{Literal, Span};
 
 mod string_literal_content {
@@ -247,7 +247,6 @@ const _S1: &str = /*json*/
 pub mod traits {
     use proc_macro2::Span;
     pub mod config {
-        //use alloc::string::String;
 
         pub trait Preamble: crate::misc::SealedTrait {
             fn is_no_preamble(&self) -> bool;
@@ -301,6 +300,8 @@ pub mod traits {
     }
 
     pub trait Extracted {
+        /// Content of the first source block, but only if we do expect a preamble, that is,
+        /// if [crate::traits::config::Preamble::is_no_preamble] returns `false`.
         fn preamble(&self) -> Option<&str>;
         fn code_blocks(&self) -> &[&str];
     }
@@ -417,6 +418,8 @@ pub mod priv_types {
         pub(crate) config: Config,
         pub(crate) span: Span,
     }
+
+    //pub struct 
 
     pub struct Extracted<'a> {
         pub(crate) preamble: Option<&'a str>,
@@ -585,10 +588,81 @@ pub fn load(config_content_literal: &Literal) -> impl traits::Loaded {
     }
 }
 
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+enum ReadmeBlockItemType {
+    Text,
+    Code,
+}
+
+struct ReadmeBlocksIter<'a> {
+    code_char_indices: CharIndices<'a>,
+}
+
+/// Conditional take & drop - only if the peeked value matches the given pattern.
+///
+/// Return NOT an iterated value, but bool whether it took & dropped a value, or not.
+macro_rules! peek_and_drop {
+    ($iter_mut:expr, $pat:pat) => {{
+        if let $pat = $iter_mut.peek() {
+            $iter_mut.next();
+            true
+        } else {
+            false
+        }
+    }};
+}
+
+fn readme_blocks_iter(source_content: &str) {
+    //-> impl Iterator<Item = (&str, ReadmeBlockItemType)> {
+    let mut pairs = source_content.char_indices().peekable();
+    let mut item_type = ReadmeBlockItemType::Text;
+
+    // Exclusive - so it will be the beginning of the next item to return
+    let mut last_item_end = 0usize;
+
+    //core::iter::from_fn( move || {
+    while let Some((byte_idx, c)) = pairs.next() {
+        if c != '\n' {
+            continue;
+        }
+        /*while let Some((_, c)) = pairs.peek() && (*c==' ' || *c=='\t') {
+            pairs.next();
+        }*/
+        /*if let Some((_, '/'))= pairs.peek() && {
+            pairs.next();
+            true
+        } && true
+        {}*/
+        if peek_and_drop!(pairs, Some((_, '`')))
+            && peek_and_drop!(pairs, Some((_, '`')))
+            && peek_and_drop!(pairs, Some((_, '`')))
+        {
+            while let Some((byte_idx, c)) = pairs.next() {
+                if c != '\n' {
+                    continue;
+                }
+            }
+        }
+    }
+
+    //});
+}
 /*
 #[doc(hidden)]
 pub fn extract<'a>(load: &'a impl traits::Loaded) -> impl traits::Extracted {
-    let preamble = if load.
+    let mut code_chars_indices = load.source_file_content().char_indices();
+
+    let mut block_start = 0usize;
+
+    let code_blocks = core::iter::from_fn( move || {
+
+    });
+
+    let preamble = if !load.config().preamble().is_no_preamble() {
+
+    } else {
+        None
+    };
 
     priv_types::Extracted {
         preamble,
