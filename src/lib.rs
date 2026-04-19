@@ -1,5 +1,6 @@
 #![doc = include_str!("../README.md")]
 
+// Avoid std:: and use core:: or alloc::  as much as we can.
 extern crate alloc;
 use alloc::string::String;
 use core::iter::Peekable;
@@ -251,14 +252,15 @@ pub mod public {
     use proc_macro2::Span;
     pub mod config {
 
+        /// Whether we expect a preamble, what kind, and what prefix to inject just before its code.
         pub trait Preamble: crate::misc::SealedTrait {
             fn is_no_preamble(&self) -> bool;
 
             fn is_copy_verbatim(&self) -> bool;
 
             /// If [None], then the preamble is NOT
-            /// [crate::types::config::Preamble::ItemsWithPrefix]. If [Some], then the preamble IS
-            /// [crate::types::config::Preamble::ItemsWithPrefix], regardless of whether the
+            /// [crate::private::config::Preamble::ItemsWithPrefix]. If [Some], then the preamble IS
+            /// [crate::private::config::Preamble::ItemsWithPrefix], regardless of whether the
             /// &[`str`] is empty or not. If &[`str`] is empty, then it's the same as if
             /// [Preamble::is_copy_verbatim] was `true`.
             fn is_items_with_prefix(&self) -> Option<&str>;
@@ -363,11 +365,11 @@ pub mod private {
         #[derive(Serialize, Deserialize, Debug)]
         pub enum Preamble {
             /// No preamble - the very first code block is a non-Preamble block (handled by
-            /// injecting any header and/or body strings if set in [crate::types::Config]).
+            /// injecting any header and/or body strings if set in [crate::private::Config]).
             NoPreamble,
 
             /// Expecting a preamble, but no special handling - pass as-is. Any [Headers] and/or
-            /// [crate::types::Config::ordinary_code_suffix] will NOT be applied
+            /// [crate::private::Config::ordinary_code_suffix] will NOT be applied
             /// (prefixed/inserted).
             CopyVerbatim,
 
@@ -397,7 +399,7 @@ pub mod private {
             #[serde(default)]
             pub struct Inserts {
                 /// A list of strings to be injected after the injected
-                /// [crate::types::config::Headers::prefix_before_insert], and before the beginning
+                /// [crate::private::config::Headers::prefix_before_insert], and before the beginning
                 /// of the existing code of each non-preamble code block. Each string from this list
                 /// is to be used exactly once, one per each non-preamble code block. The number of
                 /// strings in this list has to be the same as the number of non-preamble code
@@ -705,8 +707,8 @@ macro_rules! peek_and_drop {
 /// Parse a README.md-like input. It's an iterator over [private::ReadmeBlock].
 ///
 /// We have used a function that called [core::iter::from_fn] and returned a similar iterator. But
-/// that complicated generc signature of [private::Extracted] to have an `impl Iterator<Item = ...>`
-/// bound. That caused its `impl` to be verbose.
+/// that over-complicated the generic signature of [private::Extracted] to have an `impl
+/// Iterator<Item = ...>` bound. That mad its `impl` verbose.
 #[derive(Debug)]
 struct ReadmeBlocksIter<'a> {
     source_content: &'a str,
@@ -798,10 +800,10 @@ impl<'a> Iterator for ReadmeBlocksIter<'a> {
 
 #[doc(hidden)]
 pub fn extract<'a>(load: &'a impl public::Loaded) -> impl public::Extracted {
-    let readme_blocks = ReadmeBlocksIter::new(load.source_file_content());
+    let mut all_blocks = ReadmeBlocksIter::new(load.source_file_content());
 
     let preamble_text = if !load.config().preamble().is_no_preamble() {
-        None
+        todo!()
     } else {
         None
     };
@@ -810,7 +812,7 @@ pub fn extract<'a>(load: &'a impl public::Loaded) -> impl public::Extracted {
     private::Extracted {
         preamble_text,
         preamble_code,
-        non_preamble_blocks: readme_blocks,
+        non_preamble_blocks: all_blocks,
     }
 }
 
