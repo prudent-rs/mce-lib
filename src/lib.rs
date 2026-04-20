@@ -180,7 +180,7 @@ pub mod public {
         end_excl: usize,
     }
     impl OwnedStringSlice {
-        pub fn new(s: String, start_incl: usize, end_excl: usize) -> Self {
+        fn new(s: String, start_incl: usize, end_excl: usize) -> Self {
             Self {
                 s,
                 start_incl,
@@ -492,13 +492,13 @@ pub(crate) mod private {
                 ///
                 /// Example of useful inserts: Names of test functions (or parts of such names) to
                 /// generate, one per each non-preamble code block.
-                pub(crate) inserts: Vec<&'a str>,
+                pub inserts: Vec<&'a str>,
 
                 /// Content to be injected at the beginning of each non-preamble code block, but
                 /// AFTER an insert.
                 ///
                 /// Example of useful inserts for generating test functions: `() {`.
-                pub(crate) after_insert: &'a str,
+                pub after_insert: &'a str,
             }
         }
 
@@ -509,10 +509,10 @@ pub(crate) mod private {
             /// an insert (if any).
             ///
             /// Example of useful prefix: `#[test] fn test_` for test functions to generate.
-            pub(crate) prefix_before_insert: &'a str,
+            pub prefix_before_insert: &'a str,
 
             #[serde(borrow)]
-            pub(crate) inserts: Option<headers::Inserts<'a>>,
+            pub inserts: Option<headers::Inserts<'a>>,
         }
     }
 
@@ -522,20 +522,20 @@ pub(crate) mod private {
     pub struct Config<'a> {
         /// **Relative** path (relative to the directory of Rust source file that invoked the chain
         /// of macros). Defaults to "README.md".
-        pub(crate) file_path: &'a str,
+        pub file_path: &'a str,
 
         pub prefix_before_preamble: &'a str,
 
         #[serde(borrow)]
-        pub(crate) preamble: config::Preamble<'a>,
+        pub preamble: config::Preamble<'a>,
 
         #[serde(borrow)]
-        pub(crate) ordinary_code_headers: Option<config::Headers<'a>>,
+        pub ordinary_code_headers: Option<config::Headers<'a>>,
 
         /// Suffix to be appended at the end of any non-preamble code block.
         ///
         /// Example of useful inserts for generating test functions: `}`.
-        pub(crate) ordinary_code_suffix: &'a str,
+        pub ordinary_code_suffix: &'a str,
 
         pub final_suffix: &'a str,
     }
@@ -555,16 +555,15 @@ pub(crate) mod private {
 
     #[derive(Debug)]
     pub struct Loaded<'a> {
-        pub(crate) source_file_content: String,
-        pub(crate) config: &'a dyn crate::public::Config,
-        pub(crate) span: &'a Span,
+        pub source_file_content: String,
+        pub config: &'a dyn crate::public::Config,
+        pub span: &'a Span,
     }
 
     #[derive(Debug)]
     pub struct CodeBlock<'a> {
-        //@TODO everywhere: pub(crate) ----> pub   - since it's behind docs-rs-only feature
-        pub(crate) triple_backtick_suffix: &'a str,
-        pub(crate) code: &'a str,
+        pub triple_backtick_suffix: &'a str,
+        pub code: &'a str,
     }
 
     #[derive(Debug)]
