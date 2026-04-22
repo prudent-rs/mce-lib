@@ -93,9 +93,7 @@ pub mod public {
         /// Whether we expect a preamble, what kind, and what prefix to inject just before its code.
         pub trait Preamble: crate::public::marker::EnumLike {
             fn is_none(&self) -> bool;
-
             fn is_copy_verbatim(&self) -> bool;
-
             fn is_prefixed(&self) -> bool;
 
             /// If [None], then the preamble is NOT
