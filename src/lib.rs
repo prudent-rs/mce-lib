@@ -669,14 +669,16 @@ pub(crate) mod private {
     pub struct Config<'a> {
         /// **Relative** path (relative to the directory of Rust source file that invoked the chain
         /// of macros). Defaults to "README.md".
+        #[serde(default = "default_config_file_path")]
         pub file_path: &'a str,
-
+        /// @TODO Document (here, in the trait and? in TOML examples) that prefix_before_preamble
+        /// CAN be set & used even IF preamble is set to [config::Preamble::None].
         pub prefix_before_preamble: &'a str,
 
         #[serde(borrow)]
         pub preamble: config::Preamble<'a>,
 
-        #[serde(borrow)]
+        #[serde(borrow, default = "default_config_ordinary_code_headers")]
         pub ordinary_code_headers: Option<config::Headers<'a>>,
 
         /// Suffix to be appended at the end of any non-preamble code block.
@@ -685,6 +687,12 @@ pub(crate) mod private {
         pub ordinary_code_suffix: &'a str,
 
         pub final_suffix: &'a str,
+    }
+    fn default_config_file_path() -> &'static str {
+        "README.md"
+    }
+    fn default_config_ordinary_code_headers<'a>() -> Option<config::Headers<'a>> {
+        None
     }
     // -----
 
@@ -799,6 +807,9 @@ mod trait_impls {
     }
     impl<'a> Default for crate::private::config::Headers<'a> {
         fn default() -> Self {
+            if true {
+                unreachable!("If this dies, then we don't need default_code_headers")
+            }
             Self {
                 prefix_before_insert: "",
                 inserts: None,
