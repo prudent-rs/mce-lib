@@ -81,20 +81,29 @@ pub mod public {
         }
     }
 
+    /// Marker-only, no-ops.
+    pub mod marker {
+        /// Indicate that any `is_***` methods are mutually exclusive (exactly one returns `true`)
+        /// and that they indicate `enum`-like.
+        pub trait EnumLike: crate::public::sealed::Trait {}
+    }
+
     pub mod config {
 
         /// Whether we expect a preamble, what kind, and what prefix to inject just before its code.
-        pub trait Preamble: crate::public::sealed::Trait {
-            fn is_no_preamble(&self) -> bool;
+        pub trait Preamble: crate::public::marker::EnumLike {
+            fn is_none(&self) -> bool;
 
             fn is_copy_verbatim(&self) -> bool;
+
+            fn is_prefixed(&self) -> bool;
 
             /// If [None], then the preamble is NOT
             /// [crate::private::config::Preamble::ItemsWithPrefix]. If [Some], then the preamble IS
             /// [crate::private::config::Preamble::ItemsWithPrefix], regardless of whether the
             /// &[`str`] is empty or not. If &[`str`] is empty, then it's the same as if
             /// [Preamble::is_copy_verbatim] was `true`.
-            fn is_items_with_prefix(&self) -> Option<&str>;
+            fn prefix(&self) -> Option<&str>;
         }
         assert_dyn_compatible!(Preamble);
 
@@ -161,15 +170,17 @@ pub mod public {
     }
     assert_dyn_compatible!(CodeBlock);
 
-    pub trait ReadmeBlock: crate::public::sealed::Trait + Debug {
-        fn is_text(&self) -> Option<&str>;
-        fn is_code(&self) -> Option<&dyn CodeBlock>;
+    pub trait ReadmeBlock: crate::public::marker::EnumLike + Debug {
+        fn is_text(&self) -> bool;
+        fn is_code(&self) -> bool;
+        fn text(&self) -> Option<&str>;
+        fn code(&self) -> Option<&dyn CodeBlock>;
         /// Return code or text content. If `self` holds [CodeBlock], then the returned `&str` is
         /// the same as [CodeBlock::code], that is, excluding any triple backtick suffix.
         fn content(&self) -> &str {
-            if let Some(text) = self.is_text() {
+            if let Some(text) = self.text() {
                 text
-            } else if let Some(code) = self.is_code() {
+            } else if let Some(code) = self.code() {
                 code.code()
             } else {
                 unreachable!()
@@ -533,7 +544,7 @@ pub mod public {
         let mut all_blocks =
             crate::public::ReadmeBlocksIter::new(load.source_file_content()).peekable();
 
-        let (preamble_text, preamble_code) = if load.config().preamble().is_no_preamble() {
+        let (preamble_text, preamble_code) = if load.config().preamble().is_none() {
             (None, None)
         } else {
             let preamble_text = if let Some(block) = all_blocks.peek() {
@@ -588,7 +599,7 @@ pub(crate) mod private {
         pub enum Preamble<'a> {
             /// No preamble - the very first code block is a non-Preamble block (handled by
             /// injecting any header and/or body strings if set in [crate::private::Config]).
-            NoPreamble,
+            None,
 
             /// Expecting a preamble, but no special handling - pass as-is. Any [Headers] and/or
             /// [crate::private::Config::ordinary_code_suffix] will NOT be applied
@@ -610,7 +621,7 @@ pub(crate) mod private {
             ///
             /// If the [String] value is an empty string, then this is equivalent to
             /// [Preamble::CopyVerbatim].
-            ItemsWithPrefix(&'a str),
+            Prefixed(&'a str),
         }
 
         pub mod headers {
@@ -739,18 +750,22 @@ mod trait_impls {
     }
     impl<'a> Default for crate::private::config::Preamble<'a> {
         fn default() -> Self {
-            Self::NoPreamble
+            Self::None
         }
     }
+    impl<'a> crate::public::marker::EnumLike for crate::private::config::Preamble<'a> {}
     impl<'a> crate::public::config::Preamble for crate::private::config::Preamble<'a> {
-        fn is_no_preamble(&self) -> bool {
-            matches!(self, Self::NoPreamble)
+        fn is_none(&self) -> bool {
+            matches!(self, Self::None)
         }
         fn is_copy_verbatim(&self) -> bool {
             matches!(self, Self::CopyVerbatim)
         }
-        fn is_items_with_prefix(&self) -> Option<&str> {
-            if let Self::ItemsWithPrefix(s) = self {
+        fn is_prefixed(&self) -> bool {
+            matches!(self, Self::Prefixed(_))
+        }
+        fn prefix(&self) -> Option<&str> {
+            if let Self::Prefixed(s) = self {
                 Some(s)
             } else {
                 None
@@ -816,7 +831,7 @@ mod trait_impls {
                 file_path: "README.md",
 
                 prefix_before_preamble: "",
-                preamble: crate::private::config::Preamble::NoPreamble,
+                preamble: crate::private::config::Preamble::None,
 
                 ordinary_code_headers: None,
                 ordinary_code_suffix: "",
@@ -910,14 +925,21 @@ mod trait_impls {
         #[allow(private_interfaces)]
         fn _seal(&self, _: &TraitParam) {}
     }
+    impl<'a> crate::public::marker::EnumLike for crate::private::ReadmeBlock<'a> {}
     impl<'a> crate::public::ReadmeBlock for crate::private::ReadmeBlock<'a> {
-        fn is_text(&self) -> Option<&str> {
+        fn is_text(&self) -> bool {
+            matches!(self, Self::Text(_))
+        }
+        fn is_code(&self) -> bool {
+            matches!(self, Self::Code(_))
+        }
+        fn text(&self) -> Option<&str> {
             match self {
                 Self::Text(s) => Some(*s),
                 Self::Code(_) => None,
             }
         }
-        fn is_code(&self) -> Option<&dyn crate::public::CodeBlock> {
+        fn code(&self) -> Option<&dyn crate::public::CodeBlock> {
             match self {
                 Self::Code(b) => Some(b),
                 Self::Text(_) => None,
