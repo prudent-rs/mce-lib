@@ -204,10 +204,15 @@ pub mod public {
         item_is_code: bool,
         /// Zero-based index of where the triple backtick suffix ends for the current block. Only if
         /// the current block is a code block, that is, if [ReadmeBlocksIter::item_is_code] is true.
-        /// [ReadmeBlocksIter::code_triple_backtick_suffix_end] may be [Some] even if there is NO
-        /// triple backtick suffix - then the [usize] valuewill be the same as
+        /// [ReadmeBlocksIter::code_triple_backtick_suffix_end] may be [Some] of [Some] even if
+        /// there is NO triple backtick suffix - then the [usize] value will be the same as
         /// [ReadmeBlocksIter::item_start].
-        code_triple_backtick_suffix_end: Option<usize>,
+        ///
+        /// - [None] if [ReadmeBlocksIter::item_is_code] is [false]
+        /// - [Some] of [None] if [ReadmeBlocksIter::item_is_code] is [true], but the triple
+        ///   backtick suffix end is not determined yet
+        /// - [Some] of [Some] (incl. `Some(Some(0))`) if determined
+        code_triple_backtick_suffix_end: Option<Option<usize>>,
     }
     impl<'a> ReadmeBlocksIter<'a> {
         pub(crate) fn new(source_content: &'a str) -> Self {
@@ -241,14 +246,15 @@ pub mod public {
 
         fn next(&mut self) -> Option<crate::private::ReadmeBlock<'a>> {
             while let Some((byte_idx, c)) = self.pairs.next() {
-                if self.item_is_code && self.code_triple_backtick_suffix_end == None {
+                assert_eq!(
+                    self.code_triple_backtick_suffix_end == None,
+                    !self.item_is_code
+                );
+                if self.item_is_code && self.code_triple_backtick_suffix_end == Some(None) {
                     if c != '\n' {
                         continue;
                     }
-                    assert_eq!(self.code_triple_backtick_suffix_end, None); // ? If valid assert, then simplify the next
-                    if self.code_triple_backtick_suffix_end == None {
-                        self.code_triple_backtick_suffix_end = Some(byte_idx)
-                    }
+                    self.code_triple_backtick_suffix_end = Some(Some(byte_idx))
                 }
 
                 // Skip leading white space
@@ -275,7 +281,15 @@ pub mod public {
                         let code_triple_backtick_suffix_end =
                             self.code_triple_backtick_suffix_end.unwrap_or_else(|| {
                                 panic!(
-                                    "Internal error: code_triple_backtick_suffix_end should be set."
+                                    "Internal error: code_triple_backtick_suffix_end should be \
+                                     Some(_), but it's None."
+                                );
+                            });
+                        let code_triple_backtick_suffix_end = code_triple_backtick_suffix_end
+                            .unwrap_or_else(|| {
+                                panic!(
+                                    "Internal error: code_triple_backtick_suffix_end is Some(_), \
+                                     but it's Some(None). It should be Some(Some(_))."
                                 );
                             });
 
@@ -293,7 +307,8 @@ pub mod public {
                     };
                     self.item_is_code = !self.item_is_code;
                     self.item_start = next_block_start;
-                    self.code_triple_backtick_suffix_end = None;
+                    self.code_triple_backtick_suffix_end =
+                        if self.item_is_code { Some(None) } else { None };
                     //panic!("Result: {result:?}, self: {self:?}");
                     return Some(result);
                 }
