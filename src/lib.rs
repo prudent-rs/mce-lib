@@ -133,7 +133,8 @@ pub mod public {
     pub trait Config: crate::public::sealed::Trait + Debug {
         fn file_path(&self) -> &str;
 
-        fn prefix_before_preamble(&self) -> &str;
+        /// Before preamble (and it applies even if [config::Preamble::is_none]).
+        fn start_prefix(&self) -> &str;
         fn preamble(&self) -> &dyn config::Preamble;
 
         fn ordinary_code_headers(&self) -> Option<&dyn config::Headers>;
@@ -669,9 +670,9 @@ pub(crate) mod private {
         /// of macros). Defaults to "README.md".
         #[serde(default = "default_config_file_path")]
         pub file_path: &'a str,
-        /// @TODO Document (here, in the trait and? in TOML examples) that prefix_before_preamble
+        /// @TODO Document (here, and in TOML examples) that prefix_before_preamble
         /// CAN be set & used even IF preamble is set to [config::Preamble::None].
-        pub prefix_before_preamble: &'a str,
+        pub start_prefix: &'a str,
 
         #[serde(borrow)]
         pub preamble: config::Preamble<'a>,
@@ -836,7 +837,7 @@ mod trait_impls {
             Self {
                 file_path: "README.md",
 
-                prefix_before_preamble: "",
+                start_prefix: "",
                 preamble: crate::private::config::Preamble::None,
 
                 ordinary_code_headers: None,
@@ -850,8 +851,8 @@ mod trait_impls {
         fn file_path(&self) -> &str {
             self.file_path
         }
-        fn prefix_before_preamble(&self) -> &str {
-            self.prefix_before_preamble
+        fn start_prefix(&self) -> &str {
+            self.start_prefix
         }
         fn preamble(&self) -> &dyn crate::public::config::Preamble {
             &self.preamble
