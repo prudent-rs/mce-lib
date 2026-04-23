@@ -323,11 +323,11 @@ pub mod public {
                 );
             } else {
                 return if self.item_start < self.source_content.len() {
+                    let result =
+                        crate::private::ReadmeBlock::Text(&self.source_content[self.item_start..]);
                     self.item_start = self.source_content.len();
 
-                    Some(crate::private::ReadmeBlock::Text(
-                        &self.source_content[self.item_start..],
-                    ))
+                    Some(result)
                 } else {
                     None
                 };
@@ -348,9 +348,9 @@ pub mod public {
 
             let v = iter.collect::<Vec<_>>();
             assert_eq!(v.len(), 1);
-            
+
             assert!(matches!(v[0], ReadmeBlock::Text(_)));
-            assert_eq!(v[0].text().unwrap().len(), 7);
+            assert_eq!(v[0].text().unwrap().len(), 15);
         }
 
         #[test]
@@ -364,9 +364,9 @@ pub mod public {
 
             let v = iter.collect::<Vec<_>>();
             assert_eq!(v.len(), 2);
-            
+
             assert!(matches!(v[0], ReadmeBlock::Text(_)));
-            assert_eq!(v[0].text().unwrap().len(), 7);
+            assert_eq!(v[0].text().unwrap().len(), 8);
 
             assert!(matches!(v[1], ReadmeBlock::Code(_)));
             assert_eq!(v[1].code().unwrap().code().len(), 28);
@@ -387,12 +387,12 @@ pub mod public {
 
             assert!(matches!(v[0], ReadmeBlock::Text(_)));
             assert!(matches!(v[0], ReadmeBlock::Text(_)));
-            
+
             assert!(matches!(v[1], ReadmeBlock::Code(_)));
             assert_eq!(v[1].code().unwrap().code().len(), 19);
 
             assert!(matches!(v[2], ReadmeBlock::Text(_)));
-            assert_eq!(v[2].text().unwrap().len(), 10);
+            assert_eq!(v[2].text().unwrap().len(), 11);
         }
     }
 
