@@ -198,20 +198,25 @@ pub mod public {
     pub struct ReadmeBlocksIter<'a> {
         source_content: &'a str,
         pairs: Peekable<CharIndices<'a>>,
+
         /// Zero-based index of the byte where the current item starts.
         item_start: usize,
+
         /// Whether the current item is a code block (rather than a text block).
         item_is_code: bool,
-        /// Zero-based index of where the triple backtick suffix ends for the current block. Only if
-        /// the current block is a code block, that is, if [ReadmeBlocksIter::item_is_code] is true.
-        /// [ReadmeBlocksIter::code_triple_backtick_suffix_end] may be [Some] of [Some] even if
-        /// there is NO triple backtick suffix - then the [usize] value will be the same as
-        /// [ReadmeBlocksIter::item_start].
+
+        /// Zero-based [usize] index of where the triple backtick suffix ends for the current block.
         ///
-        /// - [None] if [ReadmeBlocksIter::item_is_code] is [false]
-        /// - [Some] of [None] if [ReadmeBlocksIter::item_is_code] is [true], but the triple
-        ///   backtick suffix end is not determined yet
-        /// - [Some] of [Some] (incl. `Some(Some(0))`) if determined
+        /// [ReadmeBlocksIter::code_triple_backtick_suffix_end] is
+        /// - [Some] of [None], or [Some] of [Some], exactly if the current block is a code block
+        ///   (that is, if [ReadmeBlocksIter::item_is_code] is `true`).
+        ///   - [Some] of [None] if [ReadmeBlocksIter::item_is_code] is `true`, but the triple
+        ///     backtick suffix end is not determined yet
+        ///   - [Some] of [Some] (incl. `Some(Some(0))`) if the [usize] suffix end is determined
+        ///     - [ReadmeBlocksIter::code_triple_backtick_suffix_end] may be [Some] of [Some] even
+        ///       if there is NO triple backtick suffix (that is, the suffix is empty) - then the
+        ///       [usize] value will be the same as [ReadmeBlocksIter::item_start].
+        /// - [None] if [ReadmeBlocksIter::item_is_code] is `false`.
         code_triple_backtick_suffix_end: Option<Option<usize>>,
     }
     impl<'a> ReadmeBlocksIter<'a> {
