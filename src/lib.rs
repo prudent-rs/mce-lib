@@ -396,16 +396,31 @@ pub mod public {
         }
 
         #[test]
-        fn simplest_no_preamble_text() {
+        fn simplest_empty_preamble_text() {
             let iter = ReadmeBlocksIter::new(
                 "```\n\
-                 const _: &str = \"03_code\";\n\
+                 const _: &str = \"02_code\";\n\
                  ```\n\
                  text",
             );
 
             let v = iter.collect::<Vec<_>>();
             assert_eq!(v.len(), 3);
+
+            assert!(matches!(v[1], ReadmeBlock::Code(_)));
+            assert_eq!(v[1].code().unwrap().code().len(), 28);
+        }
+
+        #[test]
+        fn simplest_code_block_is_last() {
+            let iter = ReadmeBlocksIter::new(
+                "```\n\
+                 const _: &str = \"02_code\";\n\
+                 ```",
+            );
+
+            let v = iter.collect::<Vec<_>>();
+            assert_eq!(v.len(), 2);
 
             assert!(matches!(v[1], ReadmeBlock::Code(_)));
             assert_eq!(v[1].code().unwrap().code().len(), 28);
