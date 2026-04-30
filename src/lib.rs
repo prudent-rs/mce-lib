@@ -111,22 +111,22 @@ pub mod public {
         assert_dyn_compatible!(Preamble);
 
         pub mod headers {
-            pub trait Marks: crate::public::sealed::Trait {
-                /// Unique marks - if any, then it's exactly one mark per code block.
+            pub trait Tags: crate::public::sealed::Trait {
+                /// Unique tags - if any, then it's exactly one tag per code block.
                 ///
                 /// - NOT returning `impl Iterator<Item = &'a str>`, because then this trait would
                 ///   NOT be dyn-compatible.
                 /// - A slice is more flexible/useable than an [Iterator]. And it knows its length.
-                fn marks(&self) -> &[&str];
+                fn tags(&self) -> &[&str];
 
-                fn after_mark(&self) -> &str;
+                fn after_tag(&self) -> &str;
             }
-            assert_dyn_compatible!(Marks);
+            assert_dyn_compatible!(Tags);
         }
 
         pub trait Headers: crate::public::sealed::Trait {
-            fn prefix_before_mark(&self) -> &str;
-            fn marks(&self) -> Option<&dyn headers::Marks>;
+            fn prefix_before_tag(&self) -> &str;
+            fn tags(&self) -> Option<&dyn headers::Tags>;
         }
         assert_dyn_compatible!(Headers);
     }
@@ -537,7 +537,7 @@ pub mod public {
     ///   special characters) are escaped.
     /// - simply
     ///   - if the string literal starts with a quote '"', remove the leading and trailing quotation
-    ///     marks (or, actually, slice it).
+    ///     tags (or, actually, slice it).
     ///   - if the string literal starts with `r", r#", r##", r###"` etc., remove that and the
     ///     appropriate trailing group `", "#, "xx, "xxx` etc. (actually, slice it).
     ///
@@ -904,24 +904,24 @@ pub(crate) mod private {
 
             #[derive(Serialize, Deserialize, Debug)]
             #[serde(default)]
-            pub struct Marks<'a> {
+            pub struct Tags<'a> {
                 /// A list of strings to be injected after the injected
-                /// [crate::private::config::Headers::prefix_before_mark], and before the
+                /// [crate::private::config::Headers::prefix_before_tag], and before the
                 /// beginning of the existing code of each non-preamble code block.
                 ///
                 /// Each string from this list is to be used exactly once, one per each non-preamble
                 /// code block. The number of strings in this list has to be the same as the number
                 /// of non-preamble code blocks.
                 ///
-                /// Example of useful marks: Names of test functions (or parts of such names) to
+                /// Example of useful tags: Names of test functions (or parts of such names) to
                 /// generate, one per each non-preamble code block.
-                pub marks: Vec<&'a str>,
+                pub tags: Vec<&'a str>,
 
                 /// Content to be injected at the beginning of each non-preamble code block, but
-                /// AFTER a mark.
+                /// AFTER a tag.
                 ///
-                /// Example of useful content of ter a mark when generating test functions: `() {`.
-                pub after_mark: &'a str,
+                /// Example of useful content of a tag when generating test functions: `() {`.
+                pub after_tag: &'a str,
             }
         }
 
@@ -929,13 +929,13 @@ pub(crate) mod private {
         #[serde(default)]
         pub struct Headers<'a> {
             /// Prefix to be injected at the beginning of any non-preamble code block, even before
-            /// an mark (if any).
+            /// an tag (if any).
             ///
             /// Example of useful prefix: `#[test] fn test_` for test functions to generate.
-            pub prefix_before_mark: &'a str,
+            pub prefix_before_tag: &'a str,
 
             #[serde(borrow)]
-            pub marks: Option<headers::Marks<'a>>,
+            pub tags: Option<headers::Tags<'a>>,
         }
     }
 
@@ -1060,24 +1060,24 @@ mod trait_impls {
         }
     }
 
-    impl<'a> Trait for crate::private::config::headers::Marks<'a> {
+    impl<'a> Trait for crate::private::config::headers::Tags<'a> {
         #[allow(private_interfaces)]
         fn _seal(&self, _: &TraitParam) {}
     }
-    impl<'a> Default for crate::private::config::headers::Marks<'a> {
+    impl<'a> Default for crate::private::config::headers::Tags<'a> {
         fn default() -> Self {
             Self {
-                marks: vec![],
-                after_mark: "",
+                tags: vec![],
+                after_tag: "",
             }
         }
     }
-    impl<'a> crate::public::config::headers::Marks for crate::private::config::headers::Marks<'a> {
-        fn marks(&self) -> &[&str] {
-            &self.marks
+    impl<'a> crate::public::config::headers::Tags for crate::private::config::headers::Tags<'a> {
+        fn tags(&self) -> &[&str] {
+            &self.tags
         }
-        fn after_mark(&self) -> &str {
-            &self.after_mark
+        fn after_tag(&self) -> &str {
+            &self.after_tag
         }
     }
 
@@ -1091,19 +1091,19 @@ mod trait_impls {
                 unreachable!("If this dies, then we don't need default_code_headers")
             }
             Self {
-                prefix_before_mark: "",
-                marks: None,
+                prefix_before_tag: "",
+                tags: None,
             }
         }
     }
 
     impl<'a> crate::public::config::Headers for crate::private::config::Headers<'a> {
-        fn prefix_before_mark(&self) -> &str {
-            &self.prefix_before_mark
+        fn prefix_before_tag(&self) -> &str {
+            &self.prefix_before_tag
         }
-        fn marks(&self) -> Option<&dyn crate::public::config::headers::Marks> {
-            if let Some(marks) = &self.marks {
-                Some(marks)
+        fn tags(&self) -> Option<&dyn crate::public::config::headers::Tags> {
+            if let Some(tags) = &self.tags {
+                Some(tags)
             } else {
                 None
             }
