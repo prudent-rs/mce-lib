@@ -3,9 +3,6 @@
 // Avoid std:: and use core:: or alloc::  as much as we can.
 extern crate alloc;
 
-use proc_macro2_diagnostics::Diagnostic;
-use proc_macro2_diagnostics::SpanDiagnosticExt as _;
-
 // On VS Code
 // - install https://github.com/ruschaaf/extended-embedded-languages
 // - and prefix the raw string with `/*toml*/ ` - see
@@ -572,13 +569,13 @@ pub mod public {
 
     /// Use inside [string_literal_start_end] and similar.
     macro_rules! some_or_err{
-        ( $span:expr, $option_expr:expr $(, $rest:tt)+ ) => {
+        ( $span:expr, $option_expr:expr, $( $rest:tt)+ ) => {
             match $option_expr {
                 Some(value) => value,
                 None => {
                     return Err($span.clone().error(
                         format!(
-                            $( $rest ),+
+                            $( $rest )+
                         )
                     ));
                 }
@@ -588,30 +585,33 @@ pub mod public {
 
     /// Use inside [string_literal_start_end] and similar.
     macro_rules! true_or_err{
-        ( $span:expr, $bool_expr:expr $(, $rest:tt)+ ) => {
+        ( $span:expr, $bool_expr:expr, $( $rest:tt)+ ) => {
             some_or_err!(
                 $span,
                 if $bool_expr { Some(()) } else { None },
-                $( $rest ),+
+                $( $rest )+
             )
         };
     }
 
     /// Use inside [string_literal_start_end] and similar.
-    /*macro_rules! ok_or_err{
-        ( $span:expr, $result_expr:expr $(, $rest:tt)+ ) => {
+    ///
+    /// Pass a formatting string as the first part of the "rest" parameter. The last placeholder
+    /// `{}` in the formatting string will be populated with the original error.
+    macro_rules! ok_or_err{
+        ( $span:expr, $result_expr:expr, $( $rest:tt)+ ) => {
             match $result_expr {
                 Ok(value) => value,
                 Err(err) => {
                     return Err($span.clone().error(
                         format!(
-                            $( $rest ),+
+                            $( $rest )+ , err
                         )
                     ));
                 }
             }
         };
-    }*/
+    }
 
     pub fn string_literal_start_end(span: &Span, enclosed: &str) -> MacroResult<(usize, usize)> {
         /*if enclosed.len() < 2 {
@@ -777,7 +777,6 @@ pub mod public {
     pub fn config_content_and_span_by_file(
         config_file_path_literal: &Literal,
     ) -> MacroResult<(impl ConfigContentAndSpan, OwnedStringSlice)> {
-        let span = &config_file_path_literal.span();
         let toml_config_file_path =
             crate::public::string_literal_content(config_file_path_literal)?;
 
@@ -851,12 +850,21 @@ pub mod public {
 
         // Error handling is modelling https://doc.rust-lang.org/nightly/src/core/result.rs.html
         // > `fn unwrap_failed`, which invokes `panic!("{msg}: {error:?}");`
-        let content = std::fs::read_to_string(&file_full_path).unwrap_or_else(|e| {
+        //let content = std::fs::read_to_string(&file_full_path).unwrap_or_else(|e| {
+        let content = ok_or_err!(
+            span,
+            std::fs::read_to_string(&file_full_path),
+            "Expecting a file {}, but opening it failed: {:?}",
+            file_full_path
+                .to_str()
+                .unwrap_or("(PATH UNKNOWN OR NOT UTF-8)")
+        );
+        /*
             let file_path = file_full_path
                 .to_str()
                 .unwrap_or("(PATH UNKNOWN OR NOT UTF-8)");
-            panic!("Expecting a file {file_path}, but opening it failed: {e:?}",)
-        });
+            return Err(span.error( format!("Expecting a file {file_path}, but opening it failed: {e:?}")));
+        });*/
         Ok(content)
     }
 
@@ -886,7 +894,7 @@ pub mod public {
         } else {
             let preamble_text = if let Some(block) = all_blocks.peek() {
                 if matches!(block, &Ok(crate::private::ReadmeBlock::Text(_)) | &Err(_)) {
-                    Some(all_blocks.next().unwrap()?)
+                    Some(all_blocks.next().unwrap()?) // .unwrap() is ok, because we've just peeked.
                 } else {
                     None
                 }
@@ -900,7 +908,7 @@ pub mod public {
             };
             let preamble_code = if let Some(block) = all_blocks.peek() {
                 if matches!(block, &Ok(crate::private::ReadmeBlock::Code(_)) | &Err(_)) {
-                    Some(all_blocks.next().unwrap()?)
+                    Some(all_blocks.next().unwrap()?) // .unwrap() is ok, because we've just peeked.
                 } else {
                     None
                 }
