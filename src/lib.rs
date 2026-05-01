@@ -196,6 +196,41 @@ pub mod public {
             fn _seal(&self, _: &sealed::TraitParam) {}
         }
 
+        pub trait OptionOrBoolExt<T> {
+            fn ok_or_error<F: Fn() -> String>(self, f: F) -> MacroDeepResult<T>;
+
+            fn ok_or_error_for<F: Fn() -> String>(self, f: F, span: Span) -> MacroResult<T>;
+            #[allow(private_interfaces)]
+            fn _seal(&self, _: &sealed::TraitParam);
+        }
+        impl<T> OptionOrBoolExt<T> for Option<T> {
+            fn ok_or_error<F: Fn() -> String>(self, f: F) -> MacroDeepResult<T> {
+                self.ok_or_else(|| DeepDiagnostic::error(f()))
+            }
+
+            fn ok_or_error_for<F: Fn() -> String>(self, f: F, span: Span) -> MacroResult<T> {
+                self.ok_or_else(|| span.error(f()))
+            }
+            #[allow(private_interfaces)]
+            fn _seal(&self, _: &sealed::TraitParam) {}
+        }
+        impl OptionOrBoolExt<()> for bool {
+            fn ok_or_error<F: Fn() -> String>(self, f: F) -> MacroDeepResult<()> {
+                // bool::ok_or_else is unstable: https://github.com/rust-lang/rust/issues/142748
+                if self {
+                    Ok(())
+                } else {
+                    Err(DeepDiagnostic::error(f()))
+                }
+            }
+
+            fn ok_or_error_for<F: Fn() -> String>(self, f: F, span: Span) -> MacroResult<()> {
+                if self { Ok(()) } else { Err(span.error(f())) }
+            }
+            #[allow(private_interfaces)]
+            fn _seal(&self, _: &sealed::TraitParam) {}
+        }
+
         pub trait ToStringExt: ToString {
             fn to_error(&self) -> DeepDiagnostic;
             fn to_error_with<F: Fn() -> String>(&self, f: F) -> DeepDiagnostic;
@@ -864,11 +899,12 @@ pub mod public {
     }
 
     pub fn string_literal_start_end(enclosed: &str) -> MacroDeepResult<(usize, usize)> {
-        true_or_fail_deep!(
-            enclosed.len() > 2,
-            "Expecting an enclosed string literal (at least two bytes), but received: {}",
-            enclosed
-        );
+        (enclosed.len() > 2).ok_or_error(|| {
+            format!(
+                "expecting an enclosed string literal (at least two bytes), but received: {}",
+                enclosed
+            )
+        })?;
 
         let mut chars = enclosed.chars();
         let first = some_or_fail_deep! {
