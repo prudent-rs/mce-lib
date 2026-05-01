@@ -65,6 +65,7 @@ pub mod public {
     use proc_macro2::{Literal, Span};
 
     use proc_macro2_diagnostics::Diagnostic;
+    use proc_macro2_diagnostics::SpanDiagnosticExt as _;
 
     pub type MacroResult<T> = Result<T, Diagnostic>;
     pub type MacroDeepResult<T> = Result<T, DeepDiagnostic>;
@@ -90,17 +91,87 @@ pub mod public {
         }
     }
 
-    pub trait MacroResultDeepExt<T>: sealed::Trait {
+    pub trait MacroDeepResultExt<T>: sealed::Trait {
         // @TODO if implemented in proc_macro2_diagnostics, make it accept MultiSpan.
         /// Add the given [Span], and transform to [MacroResult].
         fn spanned(self, span: Span) -> MacroResult<T>;
     }
-    impl<T> MacroResultDeepExt<T> for MacroDeepResult<T> {
+    impl<T> MacroDeepResultExt<T> for MacroDeepResult<T> {
         fn spanned(self, span: Span) -> MacroResult<T> {
             self.map_err(|deep_err| deep_err.spanned(span))
         }
     }
     impl<T> sealed::Trait for MacroDeepResult<T> {
+        #[allow(private_interfaces)]
+        fn _seal(&self, _: &sealed::TraitParam) {}
+    }
+
+    pub trait IntoStringExt: Into<String> {
+        fn error(self) -> DeepDiagnostic;
+        fn error_for(self, span: Span) -> Diagnostic;
+        #[allow(private_interfaces)]
+        fn _seal(&self, _: &sealed::TraitParam);
+    }
+    impl<T: Into<String>> IntoStringExt for T {
+        fn error(self) -> DeepDiagnostic {
+            DeepDiagnostic::error(self.into())
+        }
+        fn error_for(self, span: Span) -> Diagnostic {
+            span.error(self)
+        }
+        #[allow(private_interfaces)]
+        fn _seal(&self, _: &sealed::TraitParam) {}
+    }
+
+    pub trait IntoStringResultExt<T, E: Into<String>> {
+        fn map_error(self) -> MacroDeepResult<T>;
+        fn map_error_for(self, span: Span) -> MacroResult<T>;
+        #[allow(private_interfaces)]
+        fn _seal(&self, _: &sealed::TraitParam);
+    }
+
+    impl<T, E: Into<String>> IntoStringResultExt<T, E> for Result<T, E> {
+        fn map_error(self) -> MacroDeepResult<T> {
+            self.map_err(|e| DeepDiagnostic::error(e))
+        }
+        fn map_error_for(self, span: Span) -> MacroResult<T> {
+            self.map_err(|e| span.error(e))
+        }
+        #[allow(private_interfaces)]
+        fn _seal(&self, _: &sealed::TraitParam) {}
+    }
+
+    pub trait ToStringExt: ToString {
+        fn error(self) -> DeepDiagnostic;
+        fn error_for(self, span: Span) -> Diagnostic;
+        #[allow(private_interfaces)]
+        fn _seal(&self, _: &sealed::TraitParam);
+    }
+    impl<T: ToString> ToStringExt for T {
+        fn error(self) -> DeepDiagnostic {
+            DeepDiagnostic::error(self.to_string())
+        }
+        fn error_for(self, span: Span) -> Diagnostic {
+            span.error(self.to_string())
+        }
+        #[allow(private_interfaces)]
+        fn _seal(&self, _: &sealed::TraitParam) {}
+    }
+
+    pub trait ToStringResultExt<T, E: ToString> {
+        fn map_error(self) -> MacroDeepResult<T>;
+        fn map_error_for(self, span: Span) -> MacroResult<T>;
+        #[allow(private_interfaces)]
+        fn _seal(&self, _: &sealed::TraitParam);
+    }
+
+    impl<T, E: ToString> ToStringResultExt<T, E> for Result<T, E> {
+        fn map_error(self) -> MacroDeepResult<T> {
+            self.map_err(|e| DeepDiagnostic::error(e.to_string()))
+        }
+        fn map_error_for(self, span: Span) -> MacroResult<T> {
+            self.map_err(|e| span.error(e.to_string()))
+        }
         #[allow(private_interfaces)]
         fn _seal(&self, _: &sealed::TraitParam) {}
     }
@@ -368,7 +439,7 @@ pub mod public {
     mod readme_blocks_iter_test {
         use crate::private::ReadmeBlock;
         use crate::public::{
-            MacroDeepResult, MacroResult, MacroResultDeepExt, ReadmeBlock as _, ReadmeBlocksIter,
+            MacroDeepResult, MacroDeepResultExt, MacroResult, ReadmeBlock as _, ReadmeBlocksIter,
         };
         use core::str::FromStr;
         use proc_macro2::Literal;
