@@ -703,13 +703,12 @@ pub mod public {
         use proc_macro2::Literal;
 
         #[test]
-        fn simplest_one() -> MacroResult<()> {
-            let iter = ReadmeBlocksIter::new(
-                "01 text\n\
-                02 text",
-            );
-
+        fn simple_01() -> MacroResult<()> {
             let v = {
+                let iter = ReadmeBlocksIter::new(
+                    "01 text\n\
+                    02 text",
+                );
                 let span = Literal::from_str("0").unwrap().span();
                 iter.collect::<MacroDeepResult<Vec<_>>>().spanned(span)?
             };
@@ -721,7 +720,7 @@ pub mod public {
         }
 
         #[test]
-        fn simplest_two() -> MacroDeepResult<()> {
+        fn simple_02() -> MacroDeepResult<()> {
             let iter = ReadmeBlocksIter::new(
                 "01 text\n\
                 ```\n\
@@ -741,16 +740,15 @@ pub mod public {
         }
 
         #[test]
-        fn simplest_three() -> MacroResult<()> {
-            let iter = ReadmeBlocksIter::new(
-                "01 text\n\
-                ```\n\
-                const _: () = {};\n\
-                ```\n\
-                text again",
-            );
-
+        fn simple_03() -> MacroResult<()> {
             let v = {
+                let iter = ReadmeBlocksIter::new(
+                    "01 text\n\
+                    ```\n\
+                    const _: () = {};\n\
+                    ```\n\
+                    text again",
+                );
                 let span = Literal::from_str("0").unwrap().span();
                 iter.collect::<MacroDeepResult<Vec<_>>>().spanned(span)?
             };
@@ -768,7 +766,7 @@ pub mod public {
         }
 
         #[test]
-        fn simplest_empty_preamble_text() -> MacroDeepResult<()> {
+        fn simple_empty_preamble_text() -> MacroDeepResult<()> {
             let iter = ReadmeBlocksIter::new(
                 "```\n\
                  const _: &str = \"02_code\";\n\
@@ -785,14 +783,31 @@ pub mod public {
         }
 
         #[test]
-        fn simplest_code_block_is_last() -> MacroResult<()> {
-            let iter = ReadmeBlocksIter::new(
-                "```\n\
-                 const _: &str = \"02_code\";\n\
-                 ```",
-            );
-
+        fn simple_code_block_is_last() -> MacroResult<()> {
             let v = {
+                let iter = ReadmeBlocksIter::new(
+                    "```\n\
+                    const _: &str = \"02_code\";\n\
+                    ```",
+                );
+                let span = Literal::from_str("0").unwrap().span();
+                iter.collect::<MacroDeepResult<Vec<_>>>().spanned(span)?
+            };
+            assert_eq!(v.len(), 2);
+
+            assert!(matches!(v[1], ReadmeBlock::Code(_)));
+            assert_eq!(v[1].code().unwrap().code().len(), 28);
+            Ok(())
+        }
+
+        #[test]
+        fn simple_last_code_block_unclosed() -> MacroResult<()> {
+            let v = {
+                let iter = ReadmeBlocksIter::new(
+                    "```\n\
+                    const _: &str = \"02_code\";\n\
+                    ```",
+                );
                 let span = Literal::from_str("0").unwrap().span();
                 iter.collect::<MacroDeepResult<Vec<_>>>().spanned(span)?
             };
