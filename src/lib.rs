@@ -421,8 +421,17 @@ pub mod public {
         assert_dyn_compatible!(Preamble);
 
         pub trait CodeHeaders: crate::public::sealed::Trait {
+            /// Prefix to be injected at the beginning of any non-preamble code block, even before a
+            /// tag (if any). Injected REGARDLESS of whether there is a tag or no tag (that is, the
+            /// tag is empty).
+            ///
+            /// Example of useful prefix: `#[test] fn test_` for test functions to generate.
             fn top_prefix(&self) -> &str;
+            /// Suffix to be appended (still before the beginning of any non-preamble code block),
+            /// after a tag (if any). Appended REGARDLESS of whether there is a tag or no tag (that
+            /// is, the tag is empty).
             fn tag_suffix(&self) -> &str;
+            /// Suffix to be appended after any non-preamble code block.
             fn end_suffix(&self) -> &str;
         }
         assert_dyn_compatible!(CodeHeaders);
@@ -1185,10 +1194,6 @@ pub(crate) mod private {
         #[derive(Serialize, Deserialize, Debug)]
         #[serde(default)]
         pub struct CodeHeaders<'a> {
-            /// Prefix to be injected at the beginning of any non-preamble code block, even before
-            /// a tag (if any).
-            ///
-            /// Example of useful prefix: `#[test] fn test_` for test functions to generate.
             pub top_prefix: &'a str,
             pub tag_suffix: &'a str,
             pub end_suffix: &'a str,
