@@ -660,17 +660,14 @@ pub mod public {
                     self.item_start,
                     &self.markdown_content[self.item_start..]
                 ))))
-            } else {
-                if self.item_start < self.markdown_content.len() {
-                    let result = crate::private::ReadmeBlock::Text(
-                        &self.markdown_content[self.item_start..],
-                    );
-                    self.item_start = self.markdown_content.len();
+            } else if self.item_start < self.markdown_content.len() {
+                let result =
+                    crate::private::ReadmeBlock::Text(&self.markdown_content[self.item_start..]);
+                self.item_start = self.markdown_content.len();
 
-                    Some(Ok(result))
-                } else {
-                    None
-                }
+                Some(Ok(result))
+            } else {
+                None
             }
         }
     }
