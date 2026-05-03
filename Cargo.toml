@@ -1,5 +1,5 @@
 [package]
-name = "readme-code-extractor-lib"
+name = "mce-lib"
 version = "0.0.1"
 
 edition = "2024"
@@ -9,14 +9,14 @@ rust-version = "1.88.0"
 license = "BSD-2-Clause OR Apache-2.0 OR MIT"
 
 authors = ["Peter Lyons Kehl<peter.kehl@gmail.com>"]
-description = "Extract code blocks from your README.md (or another Markdown file)."
+description = "Markdown Code Extractor: Collect code blocks from your README.md (or another Markdown file). Optional filtering. Add optional prefix and suffix to each code block, as well as the overall output."
 
 categories = ["development-tools", "development-tools::testing", "rust-patterns"]
 
 keywords = ["extract", "readme", "macro", "macros"]
 
-repository = "https://github.com/prudent-rs/readme-code-extractor-lib"
-homepage = "https://github.com/prudent-rs/readme-code-extractor"
+repository = "https://github.com/prudent-rs/mce-lib"
+homepage = "https://github.com/prudent-rs/mce"
 
 [dependencies]
 proc-macro2 = {version="1.0.60", features=["span-locations"] }

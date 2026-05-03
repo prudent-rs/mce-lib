@@ -58,7 +58,7 @@ macro_rules! assert_dyn_compatible {
     };
 }
 
-/// Internal/Only for prudent-rs/readme-code-extractor. SemVer-exempt!
+/// Internal/Only for prudent-rs/mce. SemVer-exempt!
 pub mod public {
     use core::fmt::Debug;
     use core::iter::Peekable;
@@ -439,7 +439,7 @@ pub mod public {
     }
 
     pub trait Config: crate::public::sealed::Trait + Debug {
-        /// Markdown file path, relative to where the relevant readme_code_extractor's macro is
+        /// Markdown file path, relative to where the relevant mce's macro is
         /// being used.
         fn markdown_file_path(&self) -> &str;
 
@@ -460,7 +460,7 @@ pub mod public {
         /// - Code blocks CAN be filtered by tag value even if [Self::pass_through_tag] is `false`.
         ///
         /// Filtering is determined by the actual proc macro invoked (out of
-        /// `readme-code-extractor-proc`).
+        /// `mce-proc`).
         fn pass_through_tags(&self) -> bool;
     }
     assert_dyn_compatible!(Config);
@@ -1076,7 +1076,7 @@ pub mod public {
     /// (as returned by [proc_macro2::Literal::span]) that comes from a real file and not from a test.
     /// (That is, [proc_macro2::Span::local_file] must return [Some].)
     ///
-    /// Therefore, this function is tested as a part of `prudent-rs/readme_code_extractor_proc`.
+    /// Therefore, this function is tested as a part of `prudent-rs/mce_proc`.
     fn load_file(span: Span, file_relative_path: impl AsRef<str>) -> MacroResult<String> {
         let file_relative_path = file_relative_path.as_ref();
 
@@ -1084,8 +1084,8 @@ pub mod public {
             let invoker_file_path = span.local_file().ok_or_error_for(
                 || {
                     format!(
-                        "Rust source file that invoked readme_code_extractor_lib::load_file(...) \
-                    (through one of readme_code_extractor's macros like all, all_by_file, nth, \
+                        "Rust source file that invoked mce_lib::load_file(...) \
+                    (through one of mce's macros like all, all_by_file, nth, \
                     nth_by_file) for file with relative path {file_relative_path} \
                     should have a known location."
                     )
@@ -1095,8 +1095,8 @@ pub mod public {
             let invoker_parent_dir = invoker_file_path.parent().ok_or_error_for(
                 || {
                     format!(
-                        "Rust source file that invoked readme_code_extractor_lib::load_file(...) \
-                    (through one of readme_code_extractor's macros like all, all_by_file, nth, \
+                        "Rust source file that invoked mce_lib::load_file(...) \
+                    (through one of mce's macros like all, all_by_file, nth, \
                     nth_by_file) for file with relative path {file_relative_path} \
                     may exist, but we can't get its parent directory."
                     )
@@ -1180,7 +1180,7 @@ pub mod public {
 //
 //pub use private as private_documented;
 
-/// Internal/Only for prudent-rs/readme-code-extractor. SemVer-exempt!
+/// Internal/Only for prudent-rs/mce. SemVer-exempt!
 ///
 /// Public only when on docs.rs, so that they get documented. Feature that enables them to be public
 /// fails with a compile error if used outside of docs.rs.
@@ -1526,8 +1526,8 @@ mod trait_impls {
 }
 
 // ------
-/// Internal, used between crates `readme-code-extractor-lib` and `readme-code-extractor-proc` and
-/// `readme-code-extractor` to assure that they're of the same version.
+/// Internal, used between crates `mce-lib` and `mce-proc` and
+/// `mce` to assure that they're of the same version.
 pub const fn is_exact_version(expected_version: &'static str) -> bool {
     matches!(expected_version.as_bytes(), b"0.0.1")
 }
@@ -1535,9 +1535,7 @@ pub const fn is_exact_version(expected_version: &'static str) -> bool {
 /// No need to be public.
 const _ASSERT_VERSION: () = {
     if !crate::is_exact_version(env!("CARGO_PKG_VERSION")) {
-        panic!(
-            "prudent-rs/readme-code-extractor-lib has its function is_exact_version() out of date."
-        );
+        panic!("prudent-rs/mce-lib has its function is_exact_version() out of date.");
     }
 };
 

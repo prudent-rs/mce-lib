@@ -1,9 +1,9 @@
-# readme-code-extractor-lib
+# mce-lib
 
-Mostly internal: Most of `readme-code-extractor-lib` is to be used by `readme-code-extractor` and
-`readme-code-extractor-proc` only, not directly.
+Mostly internal: Most of `mce-lib` is to be used by `mce` and
+`mce-proc` only, not directly.
 
-The only initial reason for this crate to exist as separate from readme-code-extractor was to have
+The only initial reason for this crate to exist as separate from mce was to have
 examples and up-to-date published documentation (on docs.rs).
 
 ## Stability
@@ -18,9 +18,9 @@ crate its:
   - instances can't be cloned.
 - Values
   - are returned only as immutable and with an opaque type: `Box<dyn
-    readme_code_extractor_lib::traits::Config>`.
+    mce_lib::traits::Config>`.
   - value parts are returned by immutable (shared) references, and with a non-Boxed opaque type,
-    like `&dyn readme_code_extractor_lib::traits::config::Headers`.
+    like `&dyn mce_lib::traits::config::Headers`.
 
 We may have new fields added, and as far as `Default` value(s) are valid/good, there's no need for a
 new major version.
