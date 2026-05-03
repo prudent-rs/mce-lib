@@ -9,11 +9,11 @@ rust-version = "1.88.0"
 license = "BSD-2-Clause OR Apache-2.0 OR MIT"
 
 authors = ["Peter Lyons Kehl<peter.kehl@gmail.com>"]
-description = "Markdown Code Extractor: Collect code blocks from your README.md (or another Markdown file). Optional filtering. Add optional prefix and suffix to each code block, as well as the overall output."
+description = "Markdown Code Extractor: Collect code blocks from your README.md (or another Markdown file). Optional filtering. Add optional prefix and suffix to each code block, as well as the overall output. Example: use with no-panic"
 
 categories = ["development-tools", "development-tools::testing", "rust-patterns"]
 
-keywords = ["extract", "readme", "macro", "macros"]
+keywords = ["extract", "readme", "macro", "macros", "panic"]
 
 repository = "https://github.com/prudent-rs/mce-lib"
 homepage = "https://github.com/prudent-rs/mce"
@@ -23,3 +23,6 @@ proc-macro2 = {version="1.0.60", features=["span-locations"] }
 serde = { version = "1.0.113", features = ["derive"] }
 toml = { version = "1.0.0", default-features = false, features = ["parse", "serde"] }
 proc-macro2-diagnostics = "0.10.1"
+
+[features]
+std = []

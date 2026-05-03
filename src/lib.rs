@@ -1,6 +1,5 @@
 #![doc = include_str!("../README.md")]
-
-// Avoid std:: and use core:: or alloc::  as much as we can.
+#![cfg_attr(not(feature = "std"), no_std)]
 extern crate alloc;
 
 // In VS Code
@@ -34,6 +33,8 @@ macro_rules! assert_dyn_compatible {
 
 /// Internal/Only for prudent-rs/mce. SemVer-exempt!
 pub mod public {
+    use alloc::string::{String, ToString};
+    use alloc::{format, vec::Vec};
     use core::fmt::Debug;
     use core::iter::Peekable;
     use core::str::CharIndices;
@@ -68,6 +69,8 @@ pub mod public {
 
     pub mod ext {
         use crate::public::{DeepDiagnostic, MacroDeepResult, MacroResult, sealed};
+        use alloc::format;
+        use alloc::string::{String, ToString};
         use core::fmt::Debug;
         use proc_macro2::Span;
         use proc_macro2_diagnostics::Diagnostic;
@@ -351,6 +354,7 @@ pub mod public {
     pub mod assert {
         use crate::public::ext::OptionOrBoolExt;
         use crate::public::{MacroDeepResult, MacroResult};
+        use alloc::string::String;
         use proc_macro2::Span;
 
         pub fn true_or_error<F: Fn() -> String>(b: bool, f: F) -> MacroDeepResult<()> {
@@ -472,7 +476,7 @@ pub mod public {
         //   include_str!("../README.md")]`) would leave the Rust lexer in a bad state!
         fn triple_backtick_suffix(&self) -> &str;
 
-        fn triple_backtick_suffix_parts(&self) -> &Vec<&str>;
+        fn triple_backtick_suffix_parts(&self) -> &[&str];
 
         /// The part right of "tag:" out of [Self::triple_backtick_suffix_parts] (if any).
         fn tag(&self) -> Option<&str>;
@@ -848,6 +852,7 @@ pub mod public {
                 end_excl,
             }
         }
+        #[cfg(feature = "std")]
         fn new_from_whole_string(s: String) -> Self {
             let end_excl = s.len();
             Self {
@@ -995,6 +1000,7 @@ pub mod public {
         })
     }
 
+    #[cfg(feature = "std")]
     /// Read configuration from a (TOML) file, its path is given as `config_file_path_literal`.
     ///
     /// Return impl [MacroResult] of a tuple: [ConfigContentAndSpan], and [OwnedStringSlice] which
@@ -1042,6 +1048,7 @@ pub mod public {
         })
     }
 
+    #[cfg(feature = "std")]
     /// Restriction: We support only files that are in UTF-8 (the content is in UTF-8).
     ///
     /// Return content of the file.
@@ -1096,6 +1103,7 @@ pub mod public {
         Ok(content)
     }
 
+    #[cfg(feature = "std")]
     #[doc(hidden)]
     pub fn readme_load(config_and_span: &impl ConfigAndSpan) -> MacroResult<impl ReadmeLoaded> {
         let markdown_file_path = config_and_span.config().markdown_file_path();
@@ -1159,7 +1167,9 @@ pub mod public {
 /// Public only when on docs.rs, so that they get documented. Feature that enables them to be public
 /// fails with a compile error if used outside of docs.rs.
 pub(crate) mod private {
+    #[cfg(feature = "std")]
     use alloc::string::String;
+    use alloc::vec::Vec;
     use proc_macro2::Span;
     use serde::{Deserialize, Serialize};
 
@@ -1250,6 +1260,7 @@ pub(crate) mod private {
         pub span: Span,
     }
 
+    #[cfg(feature = "std")]
     #[derive(Debug)]
     pub struct ReadmeLoaded<'a> {
         pub markdown_file_content: String,
@@ -1411,10 +1422,12 @@ mod trait_impls {
         }
     }
 
+    #[cfg(feature = "std")]
     impl<'a> Trait for crate::private::ReadmeLoaded<'a> {
         #[allow(private_interfaces)]
         fn _seal(&self, _: &TraitParam) {}
     }
+    #[cfg(feature = "std")]
     impl<'a> crate::public::ReadmeLoaded for crate::private::ReadmeLoaded<'a> {
         fn markdown_file_path(&self) -> &str {
             self.markdown_file_path
@@ -1435,7 +1448,7 @@ mod trait_impls {
         fn triple_backtick_suffix(&self) -> &str {
             self.triple_backtick_suffix
         }
-        fn triple_backtick_suffix_parts(&self) -> &Vec<&str> {
+        fn triple_backtick_suffix_parts(&self) -> &[&str] {
             &self.triple_backtick_suffix_parts
         }
         fn tag(&self) -> Option<&str> {
@@ -1515,6 +1528,7 @@ const _ASSERT_VERSION: () = {
 
 #[cfg(test)]
 mod tests {
+    use alloc::format;
     use core::str::FromStr;
     use proc_macro2::Literal;
 
