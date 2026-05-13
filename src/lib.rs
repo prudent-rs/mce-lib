@@ -748,44 +748,43 @@ pub mod public {
         let file_relative_path = file_relative_path.as_ref();
 
         let file_full_path = {
-            let invoker_file_path = span.local_file().ok_or_error_for(
-                || {
+            let invoker_file_path = span
+                .local_file()
+                .ok_or_error_with(|| {
                     format!(
                         "Rust source file that invoked mce_lib::load_file(...) \
                     (through one of mce's macros like all, all_by_file, nth, \
                     nth_by_file) for file with relative path {file_relative_path} \
                     should have a known location."
                     )
-                },
-                span,
-            )?;
-            let invoker_parent_dir = invoker_file_path.parent().ok_or_error_for(
-                || {
+                })
+                .spanned(span)?;
+            let invoker_parent_dir = invoker_file_path
+                .parent()
+                .ok_or_error_with(|| {
                     format!(
                         "Rust source file that invoked mce_lib::load_file(...) \
                     (through one of mce's macros like all, all_by_file, nth, \
                     nth_by_file) for file with relative path {file_relative_path} \
                     may exist, but we can't get its parent directory."
                     )
-                },
-                span,
-            )?;
+                })
+                .spanned(span)?;
             invoker_parent_dir.join(file_relative_path)
         };
 
         // Error handling is modelling https://doc.rust-lang.org/nightly/src/core/result.rs.html
         // > `fn unwrap_failed`, which invokes `panic!("{msg}: {error:?}");`
-        let content = std::fs::read_to_string(&file_full_path).map_error_dbg_with_for(
-            || {
+        let content = std::fs::read_to_string(&file_full_path)
+            .map_error_dbg_with(|| {
                 format!(
                     "expecting a file {}, but opening it failed",
                     file_full_path
                         .to_str()
                         .unwrap_or("(PATH UNKNOWN OR NOT UTF-8)")
                 )
-            },
-            span,
-        )?;
+            })
+            .spanned(span)?;
         Ok(content)
     }
 
