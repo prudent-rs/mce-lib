@@ -8,6 +8,7 @@ version = "0.0.1"
 dependencies = [
  "proc-macro2",
  "proc-macro2-diagnostics",
+ "proc-macro2-diagnostics-more",
  "serde",
  "toml",
 ]
@@ -32,6 +33,14 @@ dependencies = [
  "syn",
  "version_check",
  "yansi",
+]
+
+[[package]]
+name = "proc-macro2-diagnostics-more"
+version = "0.0.1"
+dependencies = [
+ "proc-macro2",
+ "proc-macro2-diagnostics",
 ]
 
 [[package]]
