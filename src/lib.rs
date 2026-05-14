@@ -31,6 +31,7 @@ macro_rules! assert_dyn_compatible {
     };
 }
 
+/// Intentionally not public - used to indicate a sealed trait.
 enum SealedTraitFunParam {}
 
 /// Internal/Only for prudent-rs/mce. SemVer-exempt!
