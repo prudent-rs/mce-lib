@@ -340,7 +340,7 @@ pub mod public {
             if self.item_is_code() {
                 // We do NOT support an unclosed last code block, even though GitHub Markdown does.
                 // See CodeBlock.
-                Some(Err(DeepDiagnostic::error_from_msg(format!(
+                Some(Err(DeepDiagnostic::new_error(format!(
                     "The last code block is not enclosed with three backticks. It started at \
                     UTF-8 byte index (indexed from zero) {}. The rest of the input was: {}",
                     self.item_start,
@@ -629,7 +629,7 @@ pub mod public {
                     } else if c == '"' {
                         break;
                     } else {
-                        return Err(DeepDiagnostic::error_from_msg(
+                        return Err(DeepDiagnostic::new_error(
                             "Expecting a raw string literal, but surprised by '{c}'. \
                                 Whole literal: {enclosed}",
                         ));
@@ -671,7 +671,7 @@ pub mod public {
                 Ok((2 + num_of_hashes, enclosed.len() - 1 - num_of_hashes))
             }
         } else {
-            Err(DeepDiagnostic::error_from_msg(
+            Err(DeepDiagnostic::new_error(
                 "Internal Error: Expecting a string literal, which would be either \"...\", or r\"...\", \
                     r#\"...\"#, r##\"...\"## (and so on). But received: {enclosed}",
             ))
