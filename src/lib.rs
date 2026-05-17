@@ -598,7 +598,8 @@ pub mod public {
                 "expecting an enclosed string literal (at least two bytes), but received: {}",
                 enclosed
             )
-        })?;
+        })
+        .to_string_based()?;
         let mut chars = enclosed.chars();
         let first = chars
             .next()
@@ -615,7 +616,7 @@ pub mod public {
                     format!(
                         "Expecting the last character to be a closing quote '\"', but it's: '{last}'."
                     )
-                })?;
+                }).to_string_based()?;
 
                 Ok((1, enclosed.len() - 1))
             } else {
@@ -649,7 +650,8 @@ pub mod public {
                             closed. Surprised by character '{c}' near the end. \
                             Whole literal: {enclosed}"
                         )
-                    })?;
+                    })
+                    .to_string_based()?;
                 }
                 let c = chars.next_back().ok_or_error_with(|| {
                     format!(
@@ -666,7 +668,8 @@ pub mod public {
                             Expecting a quote character '\"' near the end, but \
                             received '{c}' character instead. Whole literal: {enclosed}"
                     )
-                })?;
+                })
+                .to_string_based()?;
 
                 Ok((2 + num_of_hashes, enclosed.len() - 1 - num_of_hashes))
             }
