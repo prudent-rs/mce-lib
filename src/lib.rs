@@ -43,7 +43,7 @@ pub mod public {
     use core::str::CharIndices;
     use proc_macro2::{Literal, Span};
     use proc_macro2_diagnostics_more::assert;
-    use proc_macro2_diagnostics_more::ext_all::*;
+    use proc_macro2_diagnostics_more::ext::*;
     use proc_macro2_diagnostics_more::{DeepDiagnostic, MacroDeepResult, MacroResult};
 
     /// Marker-only, no-ops.
@@ -779,21 +779,16 @@ pub mod public {
 
         // Error handling is modelling https://doc.rust-lang.org/nightly/src/core/result.rs.html
         // > `fn unwrap_failed`, which invokes `panic!("{msg}: {error:?}");`
-        let content = <Result<_, _> as proc_macro2_diagnostics_more::ext_all::ResultErrDebugExt<
-            String,
-        >>::map_error_dbg_with(
-            std::fs::read_to_string(&file_full_path),
-            || {
+        std::fs::read_to_string(&file_full_path)
+            .map_error_dbg_with(|| {
                 format!(
                     "expecting a file {}, but opening it failed",
                     file_full_path
                         .to_str()
                         .unwrap_or("(PATH UNKNOWN OR NOT UTF-8)")
                 )
-            },
-        )
-        .spanned(span)?;
-        Ok(content)
+            })
+            .spanned(span)
     }
 
     #[cfg(feature = "std")]
@@ -803,7 +798,6 @@ pub mod public {
         let span = config_and_span.span();
         let markdown_file_content = load_file(span, markdown_file_path)?;
         Ok(crate::private::ReadmeLoaded {
-            //span,
             markdown_file_path,
             markdown_file_content,
             config: config_and_span.config(),

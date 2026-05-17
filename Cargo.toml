@@ -27,6 +27,7 @@ proc-macro2-diagnostics-more = { version = "0.0.1", path = "../proc-macro2-diagn
 
 [features]
 std = []
+default = ["std"]
 
 [package.metadata.docs.rs]
 default-target = "x86_64-unknown-linux-gnu"
