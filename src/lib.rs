@@ -624,10 +624,10 @@ pub mod public {
                     } else if c == '"' {
                         break;
                     } else {
-                        return Err(Displayish::new_from_display(
+                        return Err(Displayish::new_from_display(format!(
                             "Expecting a raw string literal, but surprised by '{c}'. \
-                                Whole literal: {enclosed}",
-                        )
+                                Whole literal: {enclosed}"
+                        ))
                         .dis_as_macro_deep_diagnostic());
                     }
                 }
@@ -675,9 +675,9 @@ pub mod public {
                 Ok((2 + num_of_hashes, enclosed.len() - 1 - num_of_hashes))
             }
         } else {
-            Err(Displayish::new_from_display(
+            Err(Displayish::new_from_display(format!(
                 "Internal Error: Expecting a string literal, which would be either \"...\", or r\"...\", \
-                    r#\"...\"#, r##\"...\"## (and so on). But received: {enclosed}",
+                    r#\"...\"#, r##\"...\"## (and so on). But received: {enclosed}")
             ).dis_as_macro_deep_diagnostic())
         }
     }
@@ -752,6 +752,14 @@ pub mod public {
     /// Therefore, this function is tested as a part of `prudent-rs/mce_proc`.
     fn load_file(span: Span, file_relative_path: impl AsRef<str>) -> MacroDiagnosticResult<String> {
         let file_relative_path = file_relative_path.as_ref();
+        if file_relative_path.starts_with('/') {
+            // As per docs of mce_proc::all_by_file
+            return Err(format!(
+                "Internal Error: Expecting a file path, but a relative one. Do not start it with \
+                 '/'. Received: {file_relative_path}"
+            )
+            .dis_to_error_at(span));
+        }
 
         let file_full_path = {
             let invoker_file_path = span
